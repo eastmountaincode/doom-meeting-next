@@ -40,7 +40,8 @@ export default function AdminPage() {
       } else {
         setError(data.error || 'Invalid password')
       }
-    } catch (_) {
+    } catch (err) {
+      console.error('Auth error:', err)
       setError('Authentication failed')
     } finally {
       setIsLoading(false)
