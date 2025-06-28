@@ -24,3 +24,55 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 
+ * DEBUG BORDERS - Development Tool
+ * Add 'debug-borders' class to body element to see all element boundaries
+ * Example: document.body.classList.add('debug-borders')
+ * Remove with: document.body.classList.remove('debug-borders')
+ * Keyboard shortcut: Ctrl/Cmd + B
+ */
+.debug-borders * {
+  border: 1px solid red !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
+.debug-borders *:hover {
+  border-color: yellow !important;
+  background-color: rgba(255, 255, 0, 0.2) !important;
+}
+
+/* Mobile viewport fix */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, Arial, sans-serif;
+  background-color: #242424;
+  color: white;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for modern browsers */
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+#__next {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* For Next.js app router */
+#__next > div {
+  height: 100%;
+}
+
+/* Ensure the root element also takes full height */
+html, body, #__next {
+  height: 100%;
+}
