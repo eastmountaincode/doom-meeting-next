@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useSetAtom } from 'jotai'
 import { joinMeetingAtom } from '../store/atoms'
+import Image from 'next/image'
 
 function LandingScreen() {
   const [screenName, setScreenName] = useState('')
@@ -25,9 +26,11 @@ function LandingScreen() {
       <div className="flex flex-col items-center max-w-md w-full text-center">
         {/* Logo Section */}
         <div className="mb-12">
-          <img 
+          <Image 
             src="/doom-logo.png" 
             alt="Doom Logo" 
+            width={128}
+            height={128}
             className="w-32 h-32 object-contain"
           />
         </div>

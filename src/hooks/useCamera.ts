@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 export function useCamera(selectedCamera: 'front' | 'back' | null) {
   const [stream, setStream] = useState<MediaStream | null>(null)
@@ -7,7 +7,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Stop current stream with logging
-  const stopStream = () => {
+  const stopStream = useCallback(() => {
     if (stream) {
       console.log('🔴 Stopping camera stream...')
       stream.getTracks().forEach(track => {
@@ -17,7 +17,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
       setStream(null)
       console.log('✅ Camera stream stopped')
     }
-  }
+  }, [stream])
 
   // Check if camera API is available
   const isCameraSupported = () => {
@@ -25,7 +25,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
   }
 
   // Start camera with specified facing mode
-  const startCamera = async (facingMode: 'front' | 'back') => {
+  const startCamera = useCallback(async (facingMode: 'front' | 'back') => {
     try {
       setIsLoading(true)
       setError(null)
@@ -58,23 +58,27 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
         videoRef.current.srcObject = newStream
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Camera access error:', err)
       
       // Provide more helpful error messages
-      if (err.name === 'NotAllowedError') {
-        setError('Camera permission denied. Please allow camera access.')
-      } else if (err.name === 'NotFoundError') {
-        setError('No camera found on this device.')
-      } else if (err.message.includes('HTTPS')) {
-        setError('HTTPS required for camera access.')
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          setError('Camera permission denied. Please allow camera access.')
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera found on this device.')
+        } else if (err.message.includes('HTTPS')) {
+          setError('HTTPS required for camera access.')
+        } else {
+          setError(err.message)
+        }
       } else {
-        setError(err.message)
+        setError('Unknown camera error occurred.')
       }
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [stopStream])
 
   // Effect to handle camera switching
   useEffect(() => {
@@ -88,7 +92,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
     return () => {
       stopStream()
     }
-  }, [selectedCamera])
+  }, [selectedCamera, startCamera, stopStream])
 
   // Additional cleanup for page unload and app backgrounding
   useEffect(() => {
@@ -113,7 +117,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [])
+  }, [stopStream])
 
   // Update video element when stream changes
   useEffect(() => {
