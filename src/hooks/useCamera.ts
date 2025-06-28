@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { VIDEO_CONSTRAINTS } from '../config/constants'
 
 export function useCamera(selectedCamera: 'front' | 'back' | null) {
   const [stream, setStream] = useState<MediaStream | null>(null)
@@ -31,7 +32,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
   }
 
-  // Start camera with specified facing mode - ALWAYS SQUARE for consistency
+  // Start camera with COMPRESSED settings to save LiveKit resources
   const startCamera = useCallback(async (facingMode: 'front' | 'back') => {
     try {
       setIsLoading(true)
@@ -45,24 +46,40 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
       // Stop any existing stream first
       stopStream()
 
-      console.log(`🟢 Starting ${facingMode} camera (square format)...`)
+      console.log(`🟢 Starting ${facingMode} camera (compressed for server)...`)
 
-      // SQUARE VIDEO CONSTRAINTS for consistent server feeds
+      // COMPRESSED VIDEO CONSTRAINTS to save bandwidth/resources
       const constraints: MediaStreamConstraints = {
         video: {
-          width: { ideal: 512, min: 320, max: 1024 },
-          height: { ideal: 512, min: 320, max: 1024 },
-          aspectRatio: { ideal: 1.0 }, // Force square aspect ratio
+          width: VIDEO_CONSTRAINTS.WIDTH,
+          height: VIDEO_CONSTRAINTS.HEIGHT,
+          aspectRatio: { ideal: VIDEO_CONSTRAINTS.ASPECT_RATIO },
           facingMode: facingMode === 'front' ? 'user' : 'environment',
-          frameRate: { ideal: 30, max: 30 } // Consistent frame rate
+          frameRate: VIDEO_CONSTRAINTS.FRAME_RATE,
         },
         audio: false
       }
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
+      
+      // Additional compression: Set low bitrate on video track
+      const videoTrack = newStream.getVideoTracks()[0]
+      if (videoTrack && 'applyConstraints' in videoTrack) {
+        try {
+          await videoTrack.applyConstraints({
+            width: { ideal: VIDEO_CONSTRAINTS.WIDTH.ideal },
+            height: { ideal: VIDEO_CONSTRAINTS.HEIGHT.ideal },
+            frameRate: { ideal: VIDEO_CONSTRAINTS.FRAME_RATE.ideal },
+          })
+          console.log('📉 Applied additional compression constraints')
+        } catch (constraintError) {
+          console.warn('Could not apply additional constraints:', constraintError)
+        }
+      }
+
       streamRef.current = newStream
       setStream(newStream)
-      console.log(`✅ ${facingMode} camera started (square format)`)
+      console.log(`✅ ${facingMode} camera started (compressed: ~${VIDEO_CONSTRAINTS.WIDTH.ideal}x${VIDEO_CONSTRAINTS.HEIGHT.ideal}@${VIDEO_CONSTRAINTS.FRAME_RATE.ideal}fps)`)
 
       // Set video source
       if (videoRef.current) {

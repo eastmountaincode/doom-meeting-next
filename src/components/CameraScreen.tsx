@@ -88,12 +88,22 @@ function CameraScreen() {
         </div>
       </div>
 
+      {/* Alert Zone - Fixed height to prevent layout shifts */}
+      <div className="px-4 h-16 min-h-16 flex items-center justify-center flex-shrink-0">
+        {/* Alert content will go here - currently empty */}
+                  <div className="text-center text-gray-500 w-full">
+            <p className="px-2">
+              <span className="font-bold text-red-500 text-xs sm:text-sm md:text-base break-words">YOU ARE THE EMPLOYEE OF THE MONTH !!!</span>
+            </p>
+          </div>
+      </div>    
+
       {/* Camera Selection Buttons */}
       <div className="p-4 pt-2">
-        <div className="flex gap-4 mb-4">
+        <div className="flex gap-4 mb-4 justify-center">
           <button
             onClick={() => setSelectedCamera('front')}
-            className={`flex-1 p-4 text-lg font-bold rounded-lg border-2 cursor-pointer ${
+            className={`w-full max-w-xs p-4 text-lg font-bold rounded-lg border-2 cursor-pointer ${
               selectedCamera === 'front'
                 ? 'bg-blue-500 border-blue-500 text-white'
                 : 'bg-gray-800 border-gray-600 text-white hover:border-blue-500'
@@ -104,7 +114,7 @@ function CameraScreen() {
           
           <button
             onClick={() => setSelectedCamera('back')}
-            className={`flex-1 p-4 text-lg font-bold rounded-lg border-2 cursor-pointer ${
+            className={`w-full max-w-xs p-4 text-lg font-bold rounded-lg border-2 cursor-pointer ${
               selectedCamera === 'back'
                 ? 'bg-blue-500 border-blue-500 text-white'
                 : 'bg-gray-800 border-gray-600 text-white hover:border-blue-500'
