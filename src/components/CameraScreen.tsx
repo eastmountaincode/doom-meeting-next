@@ -75,9 +75,9 @@ function CameraScreen() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Video Feed Area - Always takes up space */}
-      <div className="flex-1 p-4 pb-0">
-        <div className="relative w-full h-full bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden">
+      {/* Video Feed Area - SQUARE ASPECT RATIO for consistency */}
+      <div className="flex-1 p-4 pb-0 flex items-center justify-center">
+        <div className="relative w-full max-w-lg aspect-square bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden">
           {/* Video content */}
           {renderVideoContent()}
           

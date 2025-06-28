@@ -31,7 +31,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
   }
 
-  // Start camera with specified facing mode
+  // Start camera with specified facing mode - ALWAYS SQUARE for consistency
   const startCamera = useCallback(async (facingMode: 'front' | 'back') => {
     try {
       setIsLoading(true)
@@ -45,13 +45,16 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
       // Stop any existing stream first
       stopStream()
 
-      console.log(`🟢 Starting ${facingMode} camera...`)
+      console.log(`🟢 Starting ${facingMode} camera (square format)...`)
 
+      // SQUARE VIDEO CONSTRAINTS for consistent server feeds
       const constraints: MediaStreamConstraints = {
         video: {
-          width: { ideal: 320 },
-          height: { ideal: 240 },
-          facingMode: facingMode === 'front' ? 'user' : 'environment'
+          width: { ideal: 512, min: 320, max: 1024 },
+          height: { ideal: 512, min: 320, max: 1024 },
+          aspectRatio: { ideal: 1.0 }, // Force square aspect ratio
+          facingMode: facingMode === 'front' ? 'user' : 'environment',
+          frameRate: { ideal: 30, max: 30 } // Consistent frame rate
         },
         audio: false
       }
@@ -59,7 +62,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = newStream
       setStream(newStream)
-      console.log(`✅ ${facingMode} camera started`)
+      console.log(`✅ ${facingMode} camera started (square format)`)
 
       // Set video source
       if (videoRef.current) {
