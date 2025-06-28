@@ -22,7 +22,13 @@ export async function GET(req: NextRequest) {
   }
 
   const at = new AccessToken(apiKey, apiSecret, { identity: username });
-  at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true });
+  at.addGrant({ 
+    room, 
+    roomJoin: true, 
+    canPublish: true, 
+    canSubscribe: true,
+    canUpdateOwnMetadata: true  // Allow participants to update their own metadata
+  });
 
   return NextResponse.json(
     { token: await at.toJwt() },

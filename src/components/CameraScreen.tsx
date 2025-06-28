@@ -2,22 +2,33 @@
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { screenNameAtom, selectedCameraAtom, navigateToLandingAtom } from '../store/atoms'
-import { useCamera } from '../hooks/useCamera'
+import { useState, useEffect } from 'react'
+import { 
+  LiveKitRoom, 
+  VideoTrack,
+  useLocalParticipant,
+  useTracks
+} from '@livekit/components-react'
+import { Track } from 'livekit-client'
+import { VIDEO_CONSTRAINTS } from '../config/constants'
+import '@livekit/components-styles'
 
-function CameraScreen() {
+function LiveKitCameraView() {
   const screenName = useAtomValue(screenNameAtom)
   const [selectedCamera, setSelectedCamera] = useAtom(selectedCameraAtom)
   const navigateToLanding = useSetAtom(navigateToLandingAtom)
   
-  const { videoRef, stream, error, isLoading, stopStream } = useCamera(selectedCamera)
+  const { localParticipant } = useLocalParticipant()
+  
+  // Get the local video track
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: false },
+  ], { onlySubscribed: false })
+  
+  const localVideoTrack = tracks.find(track => track.participant.isLocal && track.publication)
 
   const handleEndMeeting = () => {
-    console.log('🔴 User clicked End - stopping camera immediately')
-    
-    // Explicitly stop camera first
-    stopStream()
-    
-    // Then navigate away (this will also trigger cleanup via selectedCamera = null)
+    console.log('🔴 User clicked End - leaving room')
     navigateToLanding()
   }
 
@@ -25,20 +36,57 @@ function CameraScreen() {
   const frontButtonText = selectedCamera === null ? 'LOOK AT ME' : 'ME'
   const backButtonText = selectedCamera === null ? 'LOOK AT YOU' : 'YOU'
 
+  // Handle camera switching
+  const handleCameraSwitch = async (facingMode: 'front' | 'back') => {
+    if (!localParticipant) return
+    
+    try {
+      console.log(`🔄 Switching to ${facingMode} camera...`)
+      
+      // Create constraints with our compressed settings
+      const constraints = {
+        width: VIDEO_CONSTRAINTS.WIDTH,
+        height: VIDEO_CONSTRAINTS.HEIGHT,
+        aspectRatio: { ideal: VIDEO_CONSTRAINTS.ASPECT_RATIO },
+        facingMode: (facingMode === 'front' ? 'user' : 'environment') as 'user' | 'environment',
+        frameRate: VIDEO_CONSTRAINTS.FRAME_RATE,
+      }
+      
+      // Enable camera with new constraints
+      await localParticipant.setCameraEnabled(true, constraints)
+      
+      // Send camera facing mode as metadata so admin can see it
+      try {
+        await localParticipant.setMetadata(JSON.stringify({ 
+          cameraFacing: facingMode 
+        }))
+        console.log(`📡 Camera facing metadata sent: ${facingMode}`)
+      } catch (metadataError) {
+        console.warn('Failed to update metadata:', metadataError)
+        // Continue anyway - camera still works, just admin won't see facing mode
+      }
+      
+      setSelectedCamera(facingMode)
+      console.log(`✅ ${facingMode} camera activated`)
+      
+    } catch (error) {
+      console.error('Camera switch error:', error)
+    }
+  }
+
   const renderVideoContent = () => {
-    if (error) {
+    if (localVideoTrack && localVideoTrack.publication) {
       return (
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-center text-red-400">
-            <div className="text-3xl mb-2">⚠️</div>
-            <p className="text-sm">Camera Error</p>
-            <p className="text-xs mt-1">{error}</p>
-          </div>
-        </div>
+        <VideoTrack
+          trackRef={localVideoTrack as any}
+          className={`w-full h-full object-cover ${
+            selectedCamera === 'front' ? 'scale-x-[-1]' : ''
+          }`}
+        />
       )
     }
 
-    if (isLoading) {
+    if (selectedCamera) {
       return (
         <div className="w-full h-full flex items-center justify-center">
           <div className="text-center text-gray-400">
@@ -46,20 +94,6 @@ function CameraScreen() {
             <p>Starting camera...</p>
           </div>
         </div>
-      )
-    }
-
-    if (selectedCamera && stream) {
-      return (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={`w-full h-full object-cover ${
-            selectedCamera === 'front' ? 'scale-x-[-1]' : ''
-          }`}
-        />
       )
     }
 
@@ -102,7 +136,7 @@ function CameraScreen() {
       <div className="p-4 pt-2">
         <div className="flex gap-4 mb-4 justify-center">
           <button
-            onClick={() => setSelectedCamera('front')}
+            onClick={() => handleCameraSwitch('front')}
             className={`w-full max-w-xs p-4 text-lg font-bold rounded-lg border-2 cursor-pointer ${
               selectedCamera === 'front'
                 ? 'bg-blue-500 border-blue-500 text-white'
@@ -113,7 +147,7 @@ function CameraScreen() {
           </button>
           
           <button
-            onClick={() => setSelectedCamera('back')}
+            onClick={() => handleCameraSwitch('back')}
             className={`w-full max-w-xs p-4 text-lg font-bold rounded-lg border-2 cursor-pointer ${
               selectedCamera === 'back'
                 ? 'bg-blue-500 border-blue-500 text-white'
@@ -135,6 +169,126 @@ function CameraScreen() {
         </div>
       </div>
     </div>
+  )
+}
+
+function CameraScreen() {
+  const screenName = useAtomValue(screenNameAtom)
+  const navigateToLanding = useSetAtom(navigateToLandingAtom)
+  
+  const [token, setToken] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string>('')
+
+  // Generate user token
+  useEffect(() => {
+    const generateUserToken = async () => {
+      try {
+        setIsLoading(true)
+        setError('')
+        
+        const response = await fetch(
+          `/api/token?room=doom&username=${encodeURIComponent(screenName)}`
+        )
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        
+        if (data.error) {
+          throw new Error(data.error)
+        }
+        
+        setToken(data.token)
+        console.log(`🎫 Generated token for user: ${screenName}`)
+      } catch (err) {
+        console.error('User token generation failed:', err)
+        setError(err instanceof Error ? err.message : 'Failed to generate user token')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (screenName) {
+      generateUserToken()
+    }
+  }, [screenName])
+
+  const handleConnectionError = (error: Error) => {
+    console.error('LiveKit user connection error:', error)
+    setError(`Connection failed: ${error.message}`)
+  }
+
+  const handleDisconnected = () => {
+    console.log('🔴 Disconnected from room - returning to landing')
+    navigateToLanding()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-900">
+        <div className="text-center text-white">
+          <div className="text-3xl mb-4">🔗</div>
+          <p className="text-lg">Joining DOOM meeting...</p>
+          <p className="text-sm text-gray-400 mt-2">Connecting as {screenName}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-900">
+        <div className="text-center text-red-400 max-w-md">
+          <div className="text-3xl mb-4">⚠️</div>
+          <p className="text-lg mb-2">Connection Failed</p>
+          <p className="text-sm mb-6">{error}</p>
+          <div className="space-x-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => navigateToLanding()}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-900">
+        <div className="text-center text-gray-400">
+          <div className="text-3xl mb-4">🎫</div>
+          <p>No access token available</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <LiveKitRoom
+      video={false} // We'll enable camera manually with custom constraints
+      audio={false} // No audio for this app
+      token={token}
+      serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+      data-lk-theme="default"
+      style={{ height: '100%' }}
+      onError={handleConnectionError}
+      onDisconnected={handleDisconnected}
+      className="bg-gray-900"
+    >
+      <LiveKitCameraView />
+    </LiveKitRoom>
   )
 }
 
