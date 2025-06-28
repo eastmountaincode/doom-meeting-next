@@ -7,7 +7,8 @@ import {
   LiveKitRoom, 
   VideoTrack,
   useLocalParticipant,
-  useTracks
+  useTracks,
+  type TrackReference
 } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import { VIDEO_CONSTRAINTS } from '../config/constants'
@@ -78,7 +79,7 @@ function LiveKitCameraView() {
     if (localVideoTrack && localVideoTrack.publication) {
       return (
         <VideoTrack
-          trackRef={localVideoTrack as any}
+          trackRef={localVideoTrack as TrackReference}
           className={`w-full h-full object-cover ${
             selectedCamera === 'front' ? 'scale-x-[-1]' : ''
           }`}
