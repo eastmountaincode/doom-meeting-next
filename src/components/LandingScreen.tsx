@@ -14,7 +14,7 @@ function LandingScreen() {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleJoinMeeting()
     }
@@ -40,8 +40,8 @@ function LandingScreen() {
             type="text"
             value={screenName}
             onChange={(e) => setScreenName(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="w-full p-4 text-lg border-2 border-gray-600 rounded-lg bg-gray-800 text-white mb-8 focus:outline-none focus:border-blue-500 placeholder-gray-400"
+            onKeyDown={handleKeyDown}
+            className="w-full p-4 text-lg border-2 border-gray-600 rounded-lg bg-gray-800 text-white mb-8 focus:outline-none focus:border-blue-500 placeholder-gray-400 caret-white"
             placeholder="Our screen name"
           />
 

@@ -21,6 +21,10 @@ function CameraScreen() {
     navigateToLanding()
   }
 
+  // Dynamic button text based on camera state
+  const frontButtonText = selectedCamera === null ? 'LOOK AT ME' : 'ME'
+  const backButtonText = selectedCamera === null ? 'LOOK AT YOU' : 'YOU'
+
   const renderVideoContent = () => {
     if (error) {
       return (
@@ -95,7 +99,7 @@ function CameraScreen() {
                 : 'bg-gray-800 border-gray-600 text-white hover:border-blue-500'
             }`}
           >
-            ME
+            {frontButtonText}
           </button>
           
           <button
@@ -106,7 +110,7 @@ function CameraScreen() {
                 : 'bg-gray-800 border-gray-600 text-white hover:border-blue-500'
             }`}
           >
-            YOU
+            {backButtonText}
           </button>
         </div>
 
