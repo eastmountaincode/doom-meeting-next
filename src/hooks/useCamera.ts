@@ -5,19 +5,26 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+
+  // Keep streamRef in sync with stream state
+  useEffect(() => {
+    streamRef.current = stream
+  }, [stream])
 
   // Stop current stream with logging
   const stopStream = useCallback(() => {
-    if (stream) {
+    if (streamRef.current) {
       console.log('🔴 Stopping camera stream...')
-      stream.getTracks().forEach(track => {
+      streamRef.current.getTracks().forEach(track => {
         console.log(`Stopping ${track.kind} track`)
         track.stop()
       })
+      streamRef.current = null
       setStream(null)
       console.log('✅ Camera stream stopped')
     }
-  }, [stream])
+  }, []) // No dependencies - uses ref instead
 
   // Check if camera API is available
   const isCameraSupported = () => {
@@ -50,6 +57,7 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
       }
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints)
+      streamRef.current = newStream
       setStream(newStream)
       console.log(`✅ ${facingMode} camera started`)
 
