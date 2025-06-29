@@ -44,6 +44,13 @@ function LiveKitCameraView() {
     try {
       console.log(`🔄 Switching to ${facingMode} camera...`)
       
+      // First disable the current camera
+      console.log('🔴 Disabling current camera...')
+      await localParticipant.setCameraEnabled(false)
+      
+      // Wait a moment for the camera to fully release
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       // Create constraints with our compressed settings
       const constraints = {
         width: VIDEO_CONSTRAINTS.WIDTH,
@@ -52,6 +59,8 @@ function LiveKitCameraView() {
         facingMode: (facingMode === 'front' ? 'user' : 'environment') as 'user' | 'environment',
         frameRate: VIDEO_CONSTRAINTS.FRAME_RATE,
       }
+      
+      console.log('🟢 Enabling new camera with constraints:', constraints)
       
       // Enable camera with new constraints
       await localParticipant.setCameraEnabled(true, constraints)
@@ -72,6 +81,13 @@ function LiveKitCameraView() {
       
     } catch (error) {
       console.error('Camera switch error:', error)
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        })
+      }
     }
   }
 
