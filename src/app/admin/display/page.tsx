@@ -62,22 +62,38 @@ function ParticipantGrid() {
           gridAutoRows: '300px'
         }}
       >
-        {participantTracks.map((track) => (
-          <div 
-            key={`${track.participant.identity}-${track.publication?.trackSid || Math.random()}`} 
-            className="relative bg-black overflow-hidden w-[300px] h-[300px]"
-          >
-            <VideoTrack 
-              trackRef={track as TrackReference}
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Participant name overlay */}
-            <div className="absolute bottom-2 left-2 bg-black bg-opacity-80 px-2 py-1 text-white text-xs font-medium">
-              {track.participant.identity}
+        {participantTracks.map((track) => {
+          // Check if participant is using front camera from metadata
+          let cameraFacing = 'back'
+          try {
+            const metadata = track.participant.metadata
+            if (metadata) {
+              const parsed = JSON.parse(metadata)
+              cameraFacing = parsed.cameraFacing || 'back'
+            }
+          } catch (e) {
+            // Metadata parsing failed, default to back camera
+          }
+          
+          return (
+            <div 
+              key={`${track.participant.identity}-${track.publication?.trackSid || Math.random()}`} 
+              className="relative bg-black overflow-hidden w-[300px] h-[300px]"
+            >
+              <VideoTrack 
+                trackRef={track as TrackReference}
+                className={`w-full h-full object-cover ${
+                  cameraFacing === 'front' ? 'scale-x-[-1]' : ''
+                }`}
+              />
+              
+              {/* Participant name overlay */}
+              <div className="absolute bottom-2 left-2 bg-black bg-opacity-80 px-2 py-1 text-white text-xs font-medium">
+                {track.participant.identity}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
