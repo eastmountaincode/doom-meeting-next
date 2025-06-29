@@ -29,7 +29,10 @@ export function useCamera(selectedCamera: 'front' | 'back' | null) {
 
   // Check if camera API is available
   const isCameraSupported = () => {
-    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    if (typeof navigator === 'undefined') return false
+    if (!navigator.mediaDevices) return false
+    if (!navigator.mediaDevices.getUserMedia) return false
+    return true
   }
 
   // Start camera with COMPRESSED settings to save LiveKit resources
