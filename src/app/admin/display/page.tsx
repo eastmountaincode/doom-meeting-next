@@ -43,7 +43,7 @@ function ParticipantGrid() {
 
   if (participantCount === 0) {
     return (
-      <div className="h-screen w-screen bg-black flex items-center justify-center text-white">
+      <div className="h-screen w-screen bg-white flex items-center justify-center text-black">
         <div className="text-center">
           <div className="text-6xl mb-8">📹</div>
           <h2 className="text-4xl mb-4">DOOM Meeting Display</h2>
@@ -54,7 +54,7 @@ function ParticipantGrid() {
   }
 
   return (
-    <div className="h-screen w-screen bg-black p-4 flex items-center justify-center">
+    <div className="h-screen w-screen bg-white p-4 flex items-center justify-center">
       <div 
         className="grid gap-4"
         style={{ 
@@ -139,8 +139,8 @@ function DisplayContent() {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen bg-black flex items-center justify-center">
-        <div className="text-center text-white">
+      <div className="h-screen w-screen bg-white flex items-center justify-center">
+        <div className="text-center text-black">
           <div className="text-6xl mb-8">🔗</div>
           <p className="text-2xl">Connecting to display...</p>
         </div>
@@ -150,8 +150,8 @@ function DisplayContent() {
 
   if (error) {
     return (
-      <div className="h-screen w-screen bg-black flex items-center justify-center">
-        <div className="text-center text-red-400">
+      <div className="h-screen w-screen bg-white flex items-center justify-center">
+        <div className="text-center text-red-600">
           <div className="text-6xl mb-8">⚠️</div>
           <p className="text-2xl mb-4">Display Connection Failed</p>
           <p className="text-lg">{error}</p>
@@ -162,8 +162,8 @@ function DisplayContent() {
 
   if (!token) {
     return (
-      <div className="h-screen w-screen bg-black flex items-center justify-center">
-        <div className="text-center text-gray-400">
+      <div className="h-screen w-screen bg-white flex items-center justify-center">
+        <div className="text-center text-gray-600">
           <div className="text-6xl mb-8">🎫</div>
           <p className="text-2xl">No display access token</p>
         </div>
@@ -229,9 +229,9 @@ export default function AdminDisplayPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="h-screen w-screen bg-black flex items-center justify-center">
-        <div className="bg-gray-900 p-8 rounded-lg border border-gray-700 max-w-md w-full mx-4">
-          <h1 className="text-2xl font-bold text-white mb-6 text-center">Display Access</h1>
+      <div className="h-screen w-screen bg-white flex items-center justify-center">
+        <div className="bg-gray-100 p-8 rounded-lg border border-gray-300 max-w-md w-full mx-4">
+          <h1 className="text-2xl font-bold text-black mb-6 text-center">Display Access</h1>
           
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
@@ -240,14 +240,14 @@ export default function AdminDisplayPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Admin password"
-                className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 caret-white"
+                className="w-full p-3 bg-white border border-gray-400 rounded-lg text-black placeholder-gray-500 caret-black"
                 required
                 disabled={isLoading}
               />
             </div>
             
             {error && (
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-red-600 text-sm">{error}</p>
             )}
             
             <button

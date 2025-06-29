@@ -11,7 +11,7 @@ import {
   type TrackReference
 } from '@livekit/components-react'
 import { Track } from 'livekit-client'
-import { VIDEO_CONSTRAINTS } from '../config/constants'
+import { VIDEO_CONSTRAINTS, CAMERA_SWITCH_DELAY } from '../config/constants'
 import '@livekit/components-styles'
 
 function LiveKitCameraView() {
@@ -60,7 +60,7 @@ function LiveKitCameraView() {
       }
       
       // Wait for cleanup
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise(resolve => setTimeout(resolve, CAMERA_SWITCH_DELAY))
       
       // Create constraints with our compressed settings
       const constraints = {

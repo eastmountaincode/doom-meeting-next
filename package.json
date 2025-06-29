@@ -11,11 +11,13 @@
   "dependencies": {
     "@livekit/components-react": "^2.9.12",
     "@livekit/components-styles": "^1.1.6",
+    "@types/three": "^0.177.0",
     "jotai": "^2.12.5",
     "livekit-server-sdk": "^2.13.1",
     "next": "15.3.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "three": "^0.177.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

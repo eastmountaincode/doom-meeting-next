@@ -18,4 +18,7 @@ export const VIDEO_CONSTRAINTS = {
   },
   // Keep square aspect ratio
   ASPECT_RATIO: 1.0
-} 
+}
+
+// Camera switching delay for proper cleanup (in milliseconds)
+export const CAMERA_SWITCH_DELAY = 400 
