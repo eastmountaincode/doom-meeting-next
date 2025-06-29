@@ -47,18 +47,20 @@ function LiveKitCameraView() {
       // Get current video track if exists
       const currentTrack = localParticipant.getTrackPublication(Track.Source.Camera)
       
-      // Stop current track completely
+      // Unpublish current track completely
+      if (currentTrack) {
+        console.log('🔴 Unpublishing current video track...')
+        await localParticipant.unpublishTrack(currentTrack.track!)
+      }
+      
+      // Stop current track if it exists
       if (currentTrack?.track) {
         console.log('🔴 Stopping current video track...')
         currentTrack.track.stop()
       }
       
-      // Disable camera to clean up
-      console.log('🔴 Disabling current camera...')
-      await localParticipant.setCameraEnabled(false)
-      
-      // Wait longer for mobile Safari to fully release camera
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Wait for cleanup
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       // Create constraints with our compressed settings
       const constraints = {
@@ -69,30 +71,22 @@ function LiveKitCameraView() {
         frameRate: VIDEO_CONSTRAINTS.FRAME_RATE,
       }
       
-      console.log('🟢 Enabling new camera with constraints:', constraints)
+      console.log('🟢 Getting new camera with constraints:', constraints)
       
-      // Try to get new media stream directly first (for mobile Safari)
-      try {
-        console.log('📱 Trying direct getUserMedia for mobile Safari...')
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: constraints,
-          audio: false
+      // Get new media stream with new constraints
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: constraints,
+        audio: false
+      })
+      
+      // Publish the new video track
+      const videoTrack = stream.getVideoTracks()[0]
+      if (videoTrack) {
+        console.log('🔄 Publishing new video track to LiveKit...')
+        await localParticipant.publishTrack(videoTrack, {
+          source: Track.Source.Camera,
+          name: 'camera'
         })
-        
-        // Replace the video track in LiveKit
-        const videoTrack = stream.getVideoTracks()[0]
-        if (videoTrack) {
-          console.log('🔄 Replacing video track in LiveKit...')
-          await localParticipant.publishTrack(videoTrack, {
-            source: Track.Source.Camera,
-            name: 'camera'
-          })
-        }
-        
-      } catch (directError) {
-        console.warn('Direct getUserMedia failed, falling back to LiveKit method:', directError)
-        // Fallback to LiveKit's camera enabling
-        await localParticipant.setCameraEnabled(true, constraints)
       }
       
       // Send camera facing mode as metadata so admin can see it
