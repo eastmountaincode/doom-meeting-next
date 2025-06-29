@@ -44,12 +44,21 @@ function LiveKitCameraView() {
     try {
       console.log(`🔄 Switching to ${facingMode} camera...`)
       
-      // First disable the current camera
+      // Get current video track if exists
+      const currentTrack = localParticipant.getTrackPublication(Track.Source.Camera)
+      
+      // Stop current track completely
+      if (currentTrack?.track) {
+        console.log('🔴 Stopping current video track...')
+        currentTrack.track.stop()
+      }
+      
+      // Disable camera to clean up
       console.log('🔴 Disabling current camera...')
       await localParticipant.setCameraEnabled(false)
       
-      // Wait a moment for the camera to fully release
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Wait longer for mobile Safari to fully release camera
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Create constraints with our compressed settings
       const constraints = {
@@ -62,8 +71,29 @@ function LiveKitCameraView() {
       
       console.log('🟢 Enabling new camera with constraints:', constraints)
       
-      // Enable camera with new constraints
-      await localParticipant.setCameraEnabled(true, constraints)
+      // Try to get new media stream directly first (for mobile Safari)
+      try {
+        console.log('📱 Trying direct getUserMedia for mobile Safari...')
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: constraints,
+          audio: false
+        })
+        
+        // Replace the video track in LiveKit
+        const videoTrack = stream.getVideoTracks()[0]
+        if (videoTrack) {
+          console.log('🔄 Replacing video track in LiveKit...')
+          await localParticipant.publishTrack(videoTrack, {
+            source: Track.Source.Camera,
+            name: 'camera'
+          })
+        }
+        
+      } catch (directError) {
+        console.warn('Direct getUserMedia failed, falling back to LiveKit method:', directError)
+        // Fallback to LiveKit's camera enabling
+        await localParticipant.setCameraEnabled(true, constraints)
+      }
       
       // Send camera facing mode as metadata so admin can see it
       try {
