@@ -71,7 +71,7 @@ function ParticipantGrid() {
               const parsed = JSON.parse(metadata)
               cameraFacing = parsed.cameraFacing || 'back'
             }
-          } catch (e) {
+          } catch {
             // Metadata parsing failed, default to back camera
           }
           
