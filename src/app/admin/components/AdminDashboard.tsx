@@ -199,7 +199,7 @@ function EventsSection() {
   const [isTriggering, setIsTriggering] = useState(false)
   const [lastEvent, setLastEvent] = useState<string>('')
 
-  const triggerEvent = async (eventType: string, options: any = {}) => {
+  const triggerEvent = async (eventType: string, options: Record<string, unknown> = {}) => {
     try {
       setIsTriggering(true)
       

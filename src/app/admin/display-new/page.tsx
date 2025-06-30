@@ -19,8 +19,8 @@ export default function DisplayNewPage() {
 
   // Initialize Pusher connection
   useEffect(() => {
-    let pusher: any = null
-    let channel: any = null
+    let pusher: import('pusher-js').default | null = null
+    let channel: import('pusher-js').Channel | null = null
 
     const connectToPusher = async () => {
       try {
@@ -58,7 +58,7 @@ export default function DisplayNewPage() {
           setConnectionStatus('disconnected')
         })
         
-        pusher.connection.bind('error', (error: any) => {
+        pusher.connection.bind('error', (error: Error) => {
           console.error('Pusher error:', error)
           setConnectionStatus('error')
         })
@@ -201,9 +201,9 @@ export default function DisplayNewPage() {
         <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-2 text-blue-400">📋 Instructions</h2>
           <ol className="text-sm space-y-2 text-gray-300">
-            <li>1. Make sure you've added the Pusher environment variables to .env.local</li>
+            <li>1. Make sure you&apos;ve added the Pusher environment variables to .env.local</li>
             <li>2. Open the admin panel in another browser tab (/admin)</li>
-            <li>3. Go to the "Events" tab in the admin panel</li>
+            <li>3. Go to the &quot;Events&quot; tab in the admin panel</li>
             <li>4. Click any event button to test the connection</li>
             <li>5. Watch this page update in real-time! 🎉</li>
           </ol>
