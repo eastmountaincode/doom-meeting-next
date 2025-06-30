@@ -8,7 +8,7 @@ import {
 import '@livekit/components-styles'
 import { useDebugBorders } from '../../../hooks/useDebugBorders'
 
-type AdminSection = 'participants' | 'settings'
+type AdminSection = 'participants' | 'events' | 'settings'
 
 function ParticipantsList() {
   const participants = useParticipants()
@@ -195,6 +195,141 @@ function ParticipantsSection() {
   )
 }
 
+function EventsSection() {
+  const [isTriggering, setIsTriggering] = useState(false)
+  const [lastEvent, setLastEvent] = useState<string>('')
+
+  const triggerEvent = async (eventType: string, options: any = {}) => {
+    try {
+      setIsTriggering(true)
+      
+      const response = await fetch('/api/admin/trigger-event', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: eventType,
+          ...options,
+        }),
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        setLastEvent(`${eventType} triggered successfully`)
+        console.log('Event triggered:', result.event)
+      } else {
+        setLastEvent(`Failed to trigger ${eventType}`)
+        console.error('Event failed:', result.error)
+      }
+    } catch (error) {
+      setLastEvent(`Error: ${error}`)
+      console.error('Trigger error:', error)
+    } finally {
+      setIsTriggering(false)
+    }
+  }
+
+  const eventButtons = [
+    {
+      id: 'employee-of-month',
+      label: 'Employee of the Month 🏆',
+      description: 'Celebrate someone special',
+      color: 'bg-yellow-600 hover:bg-yellow-700',
+      onClick: () => triggerEvent('EMPLOYEE_OF_MONTH', {
+        message: 'Employee of the Month! 🏆',
+        duration: 15000,
+      }),
+    },
+    {
+      id: 'high-five',
+      label: 'High Five Challenge 🙌',
+      description: 'Encourage team bonding',
+      color: 'bg-green-600 hover:bg-green-700',
+      onClick: () => triggerEvent('HIGH_FIVE', {
+        message: 'Give each other a high five! 🙌',
+        duration: 10000,
+      }),
+    },
+    {
+      id: 'custom-message',
+      label: 'Custom Message 💬',
+      description: 'Show a custom message',
+      color: 'bg-blue-600 hover:bg-blue-700',
+      onClick: () => {
+        const message = prompt('Enter your custom message:')
+        if (message) {
+          triggerEvent('CUSTOM', {
+            message,
+            duration: 12000,
+          })
+        }
+      },
+    },
+    {
+      id: 'reset',
+      label: 'Reset Display 🔄',
+      description: 'Clear any active events',
+      color: 'bg-gray-600 hover:bg-gray-700',
+      onClick: () => triggerEvent('RESET', {
+        message: 'Display reset',
+        duration: 1000,
+      }),
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-white mb-2">Display Events</h3>
+        <p className="text-gray-400 text-sm">
+          Trigger special events on the display screen for all participants to see
+        </p>
+      </div>
+
+      {/* Status */}
+      {lastEvent && (
+        <div className="bg-gray-700 border border-gray-600 rounded-lg p-3">
+          <p className="text-sm text-gray-300">
+            <span className="text-green-400">✓</span> {lastEvent}
+          </p>
+        </div>
+      )}
+
+      {/* Event Buttons Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {eventButtons.map((event) => (
+          <button
+            key={event.id}
+            onClick={event.onClick}
+            disabled={isTriggering}
+            className={`${event.color} text-white p-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left`}
+          >
+            <div className="font-medium mb-1">{event.label}</div>
+            <div className="text-sm opacity-90">{event.description}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Test Connection */}
+      <div className="border-t border-gray-700 pt-6">
+        <h4 className="text-white font-medium mb-3">Connection Test</h4>
+        <button
+          onClick={() => triggerEvent('CUSTOM', {
+            message: 'Connection test! 🚀',
+            duration: 3000,
+          })}
+          disabled={isTriggering}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          {isTriggering ? 'Sending...' : 'Test Connection'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<AdminSection>('participants')
   
@@ -203,6 +338,7 @@ export default function AdminDashboard() {
 
   const sections = [
     { id: 'participants' as AdminSection, label: 'Participants', icon: '👥' },
+    { id: 'events' as AdminSection, label: 'Events', icon: '🎯' },
     { id: 'settings' as AdminSection, label: 'Settings', icon: '⚙️' },
   ]
 
@@ -210,6 +346,8 @@ export default function AdminDashboard() {
     switch (activeSection) {
       case 'participants':
         return <ParticipantsSection />
+      case 'events':
+        return <EventsSection />
       case 'settings':
         return (
           <div className="text-center text-gray-400 py-12">
