@@ -10,7 +10,7 @@ const WORLD_HEIGHT = 16
 const SQUARE_SIZE = 4
 
 // Animation settings
-const BASE_SPEED = 0.02
+const BASE_SPEED = 0.04
 
 // Capacity calculation
 const calculateMaxCapacity = () => {
