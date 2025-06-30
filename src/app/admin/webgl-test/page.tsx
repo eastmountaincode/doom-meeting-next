@@ -5,11 +5,11 @@ import { useEffect, useState, useRef } from "react"
 
 // Define our world boundaries (in scene units)
 const WORLD_WIDTH = 30
-const WORLD_HEIGHT = 12
-const SQUARE_SIZE = 1
+const WORLD_HEIGHT = 16
+const SQUARE_SIZE = 2
 
 // Animation settings
-const NUM_SQUARES = 19
+const NUM_SQUARES = 3
 const BASE_SPEED = 0.04
 
 // Audio context for collision sounds
