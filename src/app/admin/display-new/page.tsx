@@ -5,14 +5,26 @@ import { useAtom, useSetAtom } from 'jotai'
 import { 
   displayModeAtom, 
   currentEventAtom, 
-  triggerEventAtom,
+  setEventAtom,
   type DisplayEvent 
 } from '../../../store/atoms'
 
 export default function DisplayNewPage() {
   const [displayMode] = useAtom(displayModeAtom)
   const [currentEvent] = useAtom(currentEventAtom)
-  const triggerEvent = useSetAtom(triggerEventAtom)
+  const setEvent = useSetAtom(setEventAtom)
+  
+  // Handle event timeouts in the component (proper React way)
+  useEffect(() => {
+    if (!currentEvent || !currentEvent.duration) return
+    
+    const timeout = setTimeout(() => {
+      setEvent(null) // Clear the event after duration
+    }, currentEvent.duration)
+    
+    // Cleanup timeout on unmount or when event changes
+    return () => clearTimeout(timeout)
+  }, [currentEvent, setEvent])
   
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting')
   const [eventHistory, setEventHistory] = useState<DisplayEvent[]>([])
@@ -41,7 +53,7 @@ export default function DisplayNewPage() {
           console.log('Received event:', data)
           
           // Update Jotai state
-          triggerEvent(data)
+          setEvent(data)
           
           // Add to history
           setEventHistory(prev => [data, ...prev.slice(0, 9)]) // Keep last 10 events
@@ -81,7 +93,7 @@ export default function DisplayNewPage() {
         pusher.disconnect()
       }
     }
-  }, [triggerEvent])
+  }, [setEvent])
 
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toLocaleTimeString()

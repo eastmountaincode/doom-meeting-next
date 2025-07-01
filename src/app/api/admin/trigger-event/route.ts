@@ -19,6 +19,7 @@ export interface DisplayEvent {
   timestamp: number
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

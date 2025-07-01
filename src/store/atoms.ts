@@ -42,24 +42,21 @@ export const displayModeAtom = atom<'idle' | 'default' | 'event'>('idle')
 export const currentEventAtom = atom<DisplayEvent | null>(null)
 export const participantCountAtom = atom(0)
 
-// Display actions
-export const triggerEventAtom = atom(
+// Simple action to set event (no timeout logic)
+export const setEventAtom = atom(
   null,
-  (get, set, event: DisplayEvent) => {
+  (get, set, event: DisplayEvent | null) => {
     set(currentEventAtom, event)
-    set(displayModeAtom, 'event')
-    
-    // Auto-clear event after duration
-    if (event.duration) {
-      setTimeout(() => {
-        set(currentEventAtom, null)
-        const participantCount = get(participantCountAtom)
-        set(displayModeAtom, participantCount > 0 ? 'default' : 'idle')
-      }, event.duration)
+    if (event) {
+      set(displayModeAtom, 'event')
+    } else {
+      const participantCount = get(participantCountAtom)
+      set(displayModeAtom, participantCount > 0 ? 'default' : 'idle')
     }
   }
 )
 
+// Simplified reset action
 export const resetDisplayAtom = atom(
   null,
   (get, set) => {
