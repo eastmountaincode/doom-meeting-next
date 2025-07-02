@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useSetAtom } from 'jotai'
-import { joinMeetingAtom } from '../store/atoms'
+import { joinMeetingAtom } from '../store'
 import Image from 'next/image'
 
 function LandingScreen() {

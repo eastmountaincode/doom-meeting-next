@@ -42,23 +42,27 @@ body {
   background-color: rgba(255, 255, 0, 0.2) !important;
 }
 
-/* Mobile viewport fix */
-html {
-  height: 100%;
-  overflow: hidden;
-}
-
+/* Base body styles */
 body {
   margin: 0;
   padding: 0;
   font-family: system-ui, Arial, sans-serif;
   background-color: #242424;
   color: white;
+}
+
+/* Mobile viewport fix - only for pages that need no-scroll (like landing) */
+.no-scroll-page {
   height: 100vh;
   height: 100dvh; /* Dynamic viewport height for modern browsers */
   overflow: hidden;
   position: fixed;
   width: 100%;
+}
+
+.no-scroll-page html {
+  height: 100%;
+  overflow: hidden;
 }
 
 #__next {

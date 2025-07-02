@@ -115,8 +115,10 @@ export default function AdminPage() {
       </header>
 
       {/* Admin Content */}
-      <main className="p-6">
-        <AdminDashboard />
+      <main className="p-6 overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          <AdminDashboard />
+        </div>
       </main>
     </div>
   )

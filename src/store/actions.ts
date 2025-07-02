@@ -1,15 +1,15 @@
 import { atom } from 'jotai'
+import { DisplayScreenEvent } from '../types'
+import { 
+  currentScreenAtom,
+  screenNameAtom,
+  selectedCameraAtom,
+  displayModeAtom,
+  currentEventAtom,
+  participantCountAtom
+} from './state'
 
-// Screen navigation atom
-export const currentScreenAtom = atom<'landing' | 'camera'>('landing')
-
-// User data atoms
-export const screenNameAtom = atom('')
-
-// Camera state atoms
-export const selectedCameraAtom = atom<null | 'front' | 'back'>(null)
-
-// Actions (derived atoms for state updates)
+// Navigation actions
 export const navigateToLandingAtom = atom(
   null,
   (get, set) => {
@@ -27,25 +27,10 @@ export const joinMeetingAtom = atom(
   }
 )
 
-// Display Event types
-export interface DisplayEvent {
-  type: 'EMPLOYEE_OF_MONTH' | 'HIGH_FIVE' | 'RESET' | 'CUSTOM'
-  participantId?: string
-  participantIds?: string[]
-  message?: string
-  duration?: number
-  timestamp: number
-}
-
-// Display state atoms
-export const displayModeAtom = atom<'idle' | 'default' | 'event'>('idle')
-export const currentEventAtom = atom<DisplayEvent | null>(null)
-export const participantCountAtom = atom(0)
-
-// Simple action to set event (no timeout logic)
+// Display actions
 export const setEventAtom = atom(
   null,
-  (get, set, event: DisplayEvent | null) => {
+  (get, set, event: DisplayScreenEvent | null) => {
     set(currentEventAtom, event)
     if (event) {
       set(displayModeAtom, 'event')
@@ -56,7 +41,6 @@ export const setEventAtom = atom(
   }
 )
 
-// Simplified reset action
 export const resetDisplayAtom = atom(
   null,
   (get, set) => {

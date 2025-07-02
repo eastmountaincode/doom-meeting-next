@@ -1,7 +1,7 @@
 'use client'
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { screenNameAtom, selectedCameraAtom, navigateToLandingAtom } from '../store/atoms'
+import { screenNameAtom, selectedCameraAtom, navigateToLandingAtom } from '../store'
 import { useState, useEffect } from 'react'
 import { 
   LiveKitRoom, 

@@ -11,8 +11,8 @@ const WORLD_HEIGHT = 16
 // Configurable size thresholds
 const SIZE_THRESHOLDS = {
     XL: { maxSquares: 10, size: 5, name: "XL" },
-    LARGE: { maxSquares: 19, size: 4, name: "Large" },
-    MEDIUM: { maxSquares: 35, size: 3, name: "Medium" },
+    LARGE: { maxSquares: 15, size: 4, name: "Large" },
+    MEDIUM: { maxSquares: 32, size: 3, name: "Medium" },
     SMALL: { maxSquares: 75, size: 2, name: "Small" }
 }
 
@@ -67,33 +67,55 @@ function MovingSquares({ squareCount }: { squareCount: number }) {
     // Get current square size
     const { size: currentSquareSize } = getSquareSize(squareCount)
 
-    // Smart position finding with fallbacks
-    function findValidPosition(existingSquares: SquareData[], squareSize: number, attempts = 100): [number, number, number] | null {
-        let separationMultiplier = 1.5 // Start with ideal spacing
-        
-        while (separationMultiplier >= 1.0) {
-            for (let attempt = 0; attempt < attempts; attempt++) {
-                const position: [number, number, number] = [
-                    (Math.random() - 0.5) * (WORLD_WIDTH - squareSize * 2),
-                    (Math.random() - 0.5) * (WORLD_HEIGHT - squareSize * 2),
-                    0
-                ]
-                
-                const hasCollision = existingSquares.some(existing => {
-                    const dx = Math.abs(existing.position[0] - position[0])
-                    const dy = Math.abs(existing.position[1] - position[1])
-                    return dx < (existing.size + squareSize) * separationMultiplier && 
-                           dy < (existing.size + squareSize) * separationMultiplier
-                })
-                
-                if (!hasCollision) {
-                    return position
-                }
-            }
-            separationMultiplier -= 0.1 // Reduce spacing requirement
+    // Grid-based optimal position finding - systematically evaluates entire space
+    function findValidPosition(existingSquares: SquareData[], squareSize: number): [number, number, number] | null {
+        if (existingSquares.length === 0) {
+            // First square - place at center
+            return [0, 0, 0]
         }
         
-        return null // No valid position found
+        const GRID_SIZE = 40 // Back to full resolution for best placement
+        
+        let bestPosition: [number, number, number] | null = null
+        let bestScore = -Infinity
+        
+        // Systematically check every grid position
+        for (let i = 0; i < GRID_SIZE; i++) {
+            for (let j = 0; j < GRID_SIZE; j++) {
+                // Convert grid coordinates to world coordinates
+                const x = (i / (GRID_SIZE - 1) - 0.5) * (WORLD_WIDTH - squareSize)
+                const y = (j / (GRID_SIZE - 1) - 0.5) * (WORLD_HEIGHT - squareSize)
+                const candidatePosition: [number, number, number] = [x, y, 0]
+                
+                // Calculate minimum distance to any existing square (edge-to-edge)
+                let minDistance = Infinity
+                let hasOverlap = false
+                
+                for (const existing of existingSquares) {
+                    const dx = x - existing.position[0]
+                    const dy = y - existing.position[1]
+                    const centerDistance = Math.sqrt(dx * dx + dy * dy)
+                    
+                    // Distance between edges (negative means overlap)
+                    const edgeDistance = centerDistance - (existing.size + squareSize) / 2
+                    
+                    if (edgeDistance < 0) {
+                        hasOverlap = true
+                        break // Skip this position entirely if there's any overlap
+                    }
+                    
+                    minDistance = Math.min(minDistance, edgeDistance)
+                }
+                
+                // Only consider positions without overlap
+                if (!hasOverlap && minDistance > bestScore) {
+                    bestScore = minDistance
+                    bestPosition = candidatePosition
+                }
+            }
+        }
+        
+        return bestPosition
     }
 
     // Initialize or update squares based on square count
@@ -360,15 +382,15 @@ export default function WebGLTest4Page() {
                         <div className="flex items-center gap-2">
                             <span className="text-gray-600">Squares:</span>
                             <button
-                                onClick={() => setSquareCount(Math.max(1, squareCount - 1))}
+                                onClick={() => setSquareCount(Math.max(0, squareCount - 1))}
                                 className="w-5 h-5 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded text-xs flex items-center justify-center"
-                                disabled={squareCount <= 1}
+                                disabled={squareCount <= 0}
                             >
                                 −
                             </button>
                             <input
                                 type="range"
-                                min="1"
+                                min="0"
                                 max="75"
                                 value={squareCount}
                                 onChange={(e) => setSquareCount(parseInt(e.target.value))}
