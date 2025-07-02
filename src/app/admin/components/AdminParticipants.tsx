@@ -98,6 +98,7 @@ export default function AdminParticipants() {
   const [token, setToken] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
+  const [adminId] = useState(() => `admin-observer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
 
   // Generate admin token
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function AdminParticipants() {
         setError('')
         
         const response = await fetch(
-          `/api/token?room=doom&username=admin-observer`
+          `/api/token?room=doom&username=${adminId}`
         )
         
         if (!response.ok) {
@@ -130,7 +131,7 @@ export default function AdminParticipants() {
     }
 
     generateAdminToken()
-  }, [])
+  }, [adminId])
 
   const handleConnectionError = (error: Error) => {
     console.error('LiveKit admin connection error:', error)

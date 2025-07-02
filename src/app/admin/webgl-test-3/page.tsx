@@ -470,8 +470,7 @@ function WebGLWithLiveKit() {
     ], { onlySubscribed: false })
     
     const participantTracks = tracks.filter(
-        track => track.participant.identity !== 'admin-display' && 
-                 track.participant.identity !== 'admin-observer' &&
+        track => !track.participant.identity.startsWith('admin') &&
                  track.publication && 
                  track.publication.isSubscribed
     )
