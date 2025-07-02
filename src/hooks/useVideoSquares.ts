@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { VideoSquare, SquareConfig } from '../types/videoSquare'
+import { VideoSquare, SquareConfig, VideoSquareEvent } from '../types/videoSquare'
 import { VideoSquareManager } from '../lib/VideoSquareManager'
 import { VIDEO_SQUARE_CONFIG } from '../config/videoSquareConfig'
 
@@ -15,7 +15,9 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
 
             // Subscribe to square updates
             managerRef.current.on('squares.updated', (event) => {
-                setSquares(event.data.squares)
+                if (event.data && typeof event.data === 'object' && 'squares' in event.data) {
+                    setSquares((event.data as { squares: VideoSquare[] }).squares)
+                }
             })
 
             setIsInitialized(true)
@@ -60,7 +62,7 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
     }, [])
 
     // Subscribe to custom events
-    const onSquareEvent = useCallback((eventType: string, callback: (event: any) => void) => {
+    const onSquareEvent = useCallback((eventType: string, callback: (event: VideoSquareEvent) => void) => {
         managerRef.current?.on(eventType, callback)
 
         // Return cleanup function

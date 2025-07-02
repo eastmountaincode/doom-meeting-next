@@ -20,11 +20,11 @@ export class EventBus {
     }
   }
 
-  emit(eventType: string, data?: any): void {
+  emit(eventType: string, data?: unknown): void {
     const callbacks = this.listeners.get(eventType)
     if (callbacks) {
       const event: VideoSquareEvent = {
-        type: eventType as any,
+        type: eventType as VideoSquareEvent['type'],
         data,
         timestamp: Date.now()
       }

@@ -10,7 +10,7 @@ export interface VideoSquare {
 
 export interface VideoSquareEvent {
   type: 'squares.updated' | 'square.added' | 'square.removed' | 'physics.updated'
-  data?: any
+  data?: unknown
   timestamp: number
 }
 

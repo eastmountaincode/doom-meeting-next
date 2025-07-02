@@ -47,11 +47,9 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     addParticipant, 
     removeParticipant, 
     updateSquareVideo,
-    clearAllSquares,
     manager 
   } = useVideoSquares()
 
-  const animationRef = useRef<number | null>(null)
   const squareVelocities = useRef<Map<string, [number, number]>>(new Map())
 
   const { size, camera, gl } = useThree()
@@ -292,14 +290,6 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
   return (
     <>
       {squares.map(square => {
-        // Find corresponding video track
-        const trackRef = participantTracks.find(
-          track => track.participant.identity === square.participantId
-        )
-        const videoTrack = trackRef?.publication?.track instanceof MediaStreamTrack 
-          ? trackRef.publication.track 
-          : undefined
-        
         return (
           <VideoSquare 
             key={square.participantId}
@@ -464,7 +454,9 @@ function VideoSquareDisplay() {
   
   // Listen for admin base speed changes via Pusher
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let pusher: any = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let channel: any = null
 
     const connectToPusher = async () => {
@@ -477,10 +469,10 @@ function VideoSquareDisplay() {
         
         channel = pusher.subscribe('display-channel')
         
-        channel.bind('display-screen-event', (data: any) => {
+        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number }) => {
           console.log('Received display event:', data)
           
-          if (data.type === 'SET_BASE_SPEED') {
+          if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
             console.log('Updating base speed to:', data.baseSpeed)
             setCurrentBaseSpeed(data.baseSpeed)
           }
@@ -599,7 +591,7 @@ export default function DisplayNewPage() {
     }
 
     generateToken()
-  }, [])
+  }, [displayId])
 
   if (isLoading) {
     return (

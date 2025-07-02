@@ -1,4 +1,4 @@
-import { VideoSquare, SquareConfig } from '../types/videoSquare'
+import { VideoSquare, SquareConfig, VideoSquareEvent } from '../types/videoSquare'
 import { EventBus } from './EventBus'
 
 export class VideoSquareManager {
@@ -11,11 +11,11 @@ export class VideoSquareManager {
   }
 
   // Event system
-  on(eventType: string, callback: (event: any) => void): void {
+  on(eventType: string, callback: (event: VideoSquareEvent) => void): void {
     this.eventBus.on(eventType, callback)
   }
 
-  off(eventType: string, callback: (event: any) => void): void {
+  off(eventType: string, callback: (event: VideoSquareEvent) => void): void {
     this.eventBus.off(eventType, callback)
   }
 
