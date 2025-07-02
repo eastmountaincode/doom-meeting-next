@@ -78,7 +78,7 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     // Use actual LiveKit participants (they persist during camera switches)
     const liveParticipantIds = new Set(
       remoteParticipants
-        .filter(participant => !participant.identity.startsWith('admin'))
+        .filter(participant => !participant.identity.startsWith('admin') && !participant.identity.startsWith('display'))
         .map(participant => participant.identity)
     )
 
@@ -92,7 +92,7 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     // Add new participants who joined
     for (const participant of remoteParticipants) {
       const id = participant.identity
-      if (!id.startsWith('admin') && !currentParticipantIds.has(id)) {
+      if (!id.startsWith('admin') && !id.startsWith('display') && !currentParticipantIds.has(id)) {
         addParticipant(id, { color: generateParticipantColor(id) })
       }
     }
@@ -507,6 +507,7 @@ function VideoSquareDisplay() {
   
   const participantTracks = tracks.filter(
     track => !track.participant.identity.startsWith('admin') &&
+             !track.participant.identity.startsWith('display') &&
              track.publication && 
              track.publication.isSubscribed
   )
@@ -514,6 +515,7 @@ function VideoSquareDisplay() {
   // Also include unsubscribed tracks for broader compatibility
   const allParticipantTracks = tracks.filter(
     track => !track.participant.identity.startsWith('admin') &&
+             !track.participant.identity.startsWith('display') &&
              track.publication
   )
   
