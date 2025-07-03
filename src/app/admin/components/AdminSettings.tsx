@@ -2,8 +2,25 @@
 
 import { useState, useRef } from 'react'
 
+function speedFromSlider(sliderValue: number) {
+  if (sliderValue <= 0.75) {
+    return sliderValue / 0.75;
+  } else {
+    return 1.0 + ((sliderValue - 0.75) / 0.25) * 2.0;
+  }
+}
+
+function sliderFromSpeed(speed: number) {
+  if (speed <= 1.0) {
+    return speed * 0.75;
+  } else {
+    return 0.75 + ((speed - 1.0) / 2.0) * 0.25;
+  }
+}
+
 export default function AdminSettings() {
   const [baseSpeed, setBaseSpeed] = useState(0.06)
+  const [sliderValue, setSliderValue] = useState(sliderFromSpeed(0.06))
   const [customInput, setCustomInput] = useState('0.06')
   const [isUpdating, setIsUpdating] = useState(false)
   const lastSpeedSentRef = useRef(0)
@@ -42,16 +59,19 @@ export default function AdminSettings() {
     }
   }
 
-  // Slider handler
+  // Slider handler (sliderValue is 0-1)
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSpeed = parseFloat(e.target.value)
+    const newSliderValue = parseFloat(e.target.value)
+    const newSpeed = speedFromSlider(newSliderValue)
+    setSliderValue(newSliderValue)
     setBaseSpeed(newSpeed)
-    setCustomInput(newSpeed.toString())
+    setCustomInput(newSpeed.toFixed(2))
     throttledUpdateBaseSpeed(newSpeed)
   }
 
   const setSpeed = (speed: number) => {
     setBaseSpeed(speed)
+    setSliderValue(sliderFromSpeed(speed))
     setCustomInput(speed.toString())
     throttledUpdateBaseSpeed(speed)
   }
@@ -59,6 +79,7 @@ export default function AdminSettings() {
   const incrementSpeed = (amount: number) => {
     const newSpeed = Math.max(0, Math.round((baseSpeed + amount) * 100) / 100)
     setBaseSpeed(newSpeed)
+    setSliderValue(sliderFromSpeed(newSpeed))
     setCustomInput(newSpeed.toString())
     throttledUpdateBaseSpeed(newSpeed)
   }
@@ -67,6 +88,7 @@ export default function AdminSettings() {
     const newSpeed = parseFloat(customInput)
     if (!isNaN(newSpeed) && newSpeed >= 0) {
       setBaseSpeed(newSpeed)
+      setSliderValue(sliderFromSpeed(newSpeed))
       throttledUpdateBaseSpeed(newSpeed)
     }
   }
@@ -77,7 +99,7 @@ export default function AdminSettings() {
     }
   }
 
-  const presets = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.15, 0.25, 0.5, 1.0]
+  const presets = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.15, 0.25, 0.5, 1.0, 2.0, 3.0]
 
   return (
     <div className="space-y-4">
@@ -87,70 +109,70 @@ export default function AdminSettings() {
           Current Speed: {baseSpeed.toFixed(3)}
         </label>
         {/* Slider */}
-        <div className="flex items-center gap-4 py-2">
+        <div className="flex items-center gap-4 py-6">
           <input
             type="range"
             min="0"
             max="1"
-            step="0.01"
-            value={baseSpeed}
+            step="0.001"
+            value={sliderValue}
             onChange={handleSliderChange}
             onMouseUp={() => updateBaseSpeed(baseSpeed)}
             onTouchEnd={() => updateBaseSpeed(baseSpeed)}
-            className="w-full h-8 appearance-none slider-touch"
+            className="w-full h-12 appearance-none slider-touch"
           />
-          <span className="text-white w-12 text-right">{baseSpeed.toFixed(2)}</span>
+          <span className="text-white w-12 text-right text-lg">{baseSpeed.toFixed(2)}</span>
         </div>
         <style jsx>{`
           input[type='range'].slider-touch {
             background: transparent;
-            height: 32px;
+            height: 48px;
           }
           input[type='range'].slider-touch::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #3b82f6;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
             cursor: pointer;
             margin-top: -14px;
             transition: background 0.2s;
           }
           input[type='range'].slider-touch::-webkit-slider-runnable-track {
-            height: 8px;
-            border-radius: 4px;
+            height: 20px;
+            border-radius: 10px;
             background: #4b5563;
           }
           input[type='range'].slider-touch::-moz-range-thumb {
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #3b82f6;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
             cursor: pointer;
             transition: background 0.2s;
           }
           input[type='range'].slider-touch::-ms-thumb {
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #3b82f6;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
             cursor: pointer;
             transition: background 0.2s;
           }
           input[type='range'].slider-touch::-ms-fill-lower {
             background: #4b5563;
-            border-radius: 4px;
+            border-radius: 10px;
           }
           input[type='range'].slider-touch::-ms-fill-upper {
             background: #4b5563;
-            border-radius: 4px;
+            border-radius: 10px;
           }
           input[type='range'].slider-touch:focus {
             outline: none;
