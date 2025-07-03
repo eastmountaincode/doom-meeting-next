@@ -190,6 +190,19 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
           ])
         }
       }
+      // If resuming from 0, give a random kick to stationary squares
+      if (prevBaseSpeed.current === 0 && baseSpeed > 0) {
+        for (const [participantId, currentVel] of squareVelocities.current) {
+          if (currentVel[0] === 0 && currentVel[1] === 0) {
+            // Random direction
+            const angle = Math.random() * 2 * Math.PI
+            squareVelocities.current.set(participantId, [
+              Math.cos(angle) * baseSpeed,
+              Math.sin(angle) * baseSpeed
+            ])
+          }
+        }
+      }
       prevBaseSpeed.current = baseSpeed
     }
   }, [baseSpeed])
@@ -421,25 +434,8 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize, showName
   canvasSize: { width: number, height: number },
   showNameLabels: boolean
 }) {
-  const worldHeight = 16
-  const worldWidth = worldHeight * (canvasSize.width / canvasSize.height)
-  
   // Get remote participants to access metadata directly
   const remoteParticipants = useRemoteParticipants()
-  
-  // Convert world coordinates to pixel coordinates
-  const worldToPixel = (worldPos: [number, number, number], size: number) => {
-    const pixelX = ((worldPos[0] + worldWidth / 2) / worldWidth) * canvasSize.width
-    const pixelY = ((-worldPos[1] + worldHeight / 2) / worldHeight) * canvasSize.height // Flip Y
-    const pixelSize = (size / worldHeight) * canvasSize.height
-    
-    return {
-      left: pixelX - pixelSize / 2,
-      top: pixelY - pixelSize / 2,
-      width: pixelSize,
-      height: pixelSize
-    }
-  }
   
   return (
     <div 
@@ -459,8 +455,6 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize, showName
         const participant = remoteParticipants.find(
           p => p.identity === square.participantId
         )
-        
-        const position = worldToPixel(square.position, square.size)
         
         // Check camera facing from metadata
         let cameraFacing = 'back'
@@ -627,6 +621,7 @@ function VideoSquareDisplay() {
   const [squares, setSquares] = useState<VideoSquareType[]>([])
   const [currentBaseSpeed, setCurrentBaseSpeed] = useState(0.06)
   const [showNameLabels, setShowNameLabels] = useState(true)
+  const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff')
   
   // Listen for admin base speed changes via Pusher
   useEffect(() => {
@@ -645,7 +640,7 @@ function VideoSquareDisplay() {
         
         channel = pusher.subscribe('display-channel')
         
-        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean }) => {
+        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; backgroundColor?: string }) => {
           console.log('Received display event:', data)
           
           if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
@@ -656,6 +651,10 @@ function VideoSquareDisplay() {
           if (data.type === 'TOGGLE_NAME_LABELS' && data.showNameLabels !== undefined) {
             console.log('Updating name labels visibility to:', data.showNameLabels)
             setShowNameLabels(data.showNameLabels)
+          }
+
+          if (data.type === 'SET_BACKGROUND_COLOR' && data.backgroundColor) {
+            setBackgroundColor(data.backgroundColor)
           }
         })
         
@@ -703,7 +702,7 @@ function VideoSquareDisplay() {
   const tracksToUse = participantTracks.length > 0 ? participantTracks : allParticipantTracks
   
   return (
-    <div className="h-screen w-screen bg-white">
+    <div className="h-screen w-screen" style={{ background: backgroundColor }}>
       <div 
         style={{ 
           width: canvasSize.width, 
@@ -714,8 +713,7 @@ function VideoSquareDisplay() {
         <Canvas
           orthographic
           camera={{ position: [0, 0, 100] }}
-          className="bg-white"
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", background: backgroundColor }}
         >
           <ResponsiveCamera />
                       <MovingSquares 

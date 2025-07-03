@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { HexColorPicker } from 'react-colorful'
 
 export default function AdminEvents() {
   const [isTriggering, setIsTriggering] = useState(false)
   const [lastEvent, setLastEvent] = useState<string>('')
   const [showNameLabels, setShowNameLabels] = useState(true)
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff')
+  const lastColorSentRef = useRef(0)
 
   const triggerEvent = async (eventType: string, options: Record<string, unknown> = {}) => {
     try {
@@ -45,6 +48,22 @@ export default function AdminEvents() {
     await triggerEvent('TOGGLE_NAME_LABELS', { showNameLabels: newState })
   }
 
+  // Throttled real-time color update (50ms)
+  const handleColorChange = (color: string) => {
+    setBackgroundColor(color)
+    const now = Date.now()
+    if (now - lastColorSentRef.current > 50) {
+      lastColorSentRef.current = now
+      triggerEvent('SET_BACKGROUND_COLOR', { backgroundColor: color })
+    }
+  }
+
+  // Reset to white
+  const handleReset = async () => {
+    setBackgroundColor('#ffffff')
+    await triggerEvent('SET_BACKGROUND_COLOR', { backgroundColor: '#ffffff' })
+  }
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-bold text-white">Event Controls</h3>
@@ -60,7 +79,7 @@ export default function AdminEvents() {
       <div className="space-y-4">
         <h4 className="text-md font-semibold text-white">Display Settings</h4>
         
-        <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-2">
           <div className="flex items-center space-x-3">
             <span className="text-lg">🏷️</span>
             <div>
@@ -81,6 +100,34 @@ export default function AdminEvents() {
               }`}
             />
           </button>
+        </div>
+
+        {/* Background Color Picker */}
+        <div className="flex flex-col items-center justify-center p-4 bg-gray-700 rounded-lg">
+          <div className="flex items-center space-x-3 mb-4">
+            <span className="text-lg">🎨</span>
+            <div>
+              <div className="text-white font-medium">Background Color</div>
+              <div className="text-gray-400 text-sm">Change the display background in real time</div>
+            </div>
+          </div>
+          <div className="flex flex-col items-center space-y-4 w-full">
+            <div className="w-full flex justify-center">
+              <HexColorPicker
+                color={backgroundColor}
+                onChange={handleColorChange}
+                style={{ width: 220, height: 220 }}
+                aria-label="Pick background color"
+              />
+            </div>
+            <button
+              onClick={handleReset}
+              className="mt-2 px-6 py-2 rounded bg-white text-gray-800 font-semibold shadow hover:bg-gray-100 border border-gray-300"
+              disabled={isTriggering}
+            >
+              Reset to White
+            </button>
+          </div>
         </div>
       </div>
 

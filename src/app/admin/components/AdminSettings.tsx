@@ -1,16 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 export default function AdminSettings() {
   const [baseSpeed, setBaseSpeed] = useState(0.06)
   const [customInput, setCustomInput] = useState('0.06')
   const [isUpdating, setIsUpdating] = useState(false)
+  const lastSpeedSentRef = useRef(0)
+
+  const throttledUpdateBaseSpeed = (newSpeed: number) => {
+    const now = Date.now()
+    if (now - lastSpeedSentRef.current > 50) {
+      lastSpeedSentRef.current = now
+      updateBaseSpeed(newSpeed)
+    }
+  }
 
   const updateBaseSpeed = async (newSpeed: number) => {
     try {
       setIsUpdating(true)
-      
       const response = await fetch('/api/admin/trigger-event', {
         method: 'POST',
         headers: {
@@ -21,9 +29,7 @@ export default function AdminSettings() {
           baseSpeed: newSpeed,
         }),
       })
-      
       const result = await response.json()
-      
       if (result.success) {
         console.log('Base speed updated:', result.event)
       } else {
@@ -36,24 +42,32 @@ export default function AdminSettings() {
     }
   }
 
+  // Slider handler
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSpeed = parseFloat(e.target.value)
+    setBaseSpeed(newSpeed)
+    setCustomInput(newSpeed.toString())
+    throttledUpdateBaseSpeed(newSpeed)
+  }
+
   const setSpeed = (speed: number) => {
     setBaseSpeed(speed)
     setCustomInput(speed.toString())
-    updateBaseSpeed(speed)
+    throttledUpdateBaseSpeed(speed)
   }
 
   const incrementSpeed = (amount: number) => {
-    const newSpeed = Math.max(0.01, Math.round((baseSpeed + amount) * 100) / 100)
+    const newSpeed = Math.max(0, Math.round((baseSpeed + amount) * 100) / 100)
     setBaseSpeed(newSpeed)
     setCustomInput(newSpeed.toString())
-    updateBaseSpeed(newSpeed)
+    throttledUpdateBaseSpeed(newSpeed)
   }
 
   const handleCustomSet = () => {
     const newSpeed = parseFloat(customInput)
-    if (!isNaN(newSpeed) && newSpeed > 0) {
+    if (!isNaN(newSpeed) && newSpeed >= 0) {
       setBaseSpeed(newSpeed)
-      updateBaseSpeed(newSpeed)
+      throttledUpdateBaseSpeed(newSpeed)
     }
   }
 
@@ -63,22 +77,90 @@ export default function AdminSettings() {
     }
   }
 
-  const presets = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.15]
+  const presets = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.15, 0.25, 0.5, 1.0]
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-bold text-white">Physics Settings</h3>
-      
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-300">
           Current Speed: {baseSpeed.toFixed(3)}
         </label>
-        
+        {/* Slider */}
+        <div className="flex items-center gap-4 py-2">
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={baseSpeed}
+            onChange={handleSliderChange}
+            onMouseUp={() => updateBaseSpeed(baseSpeed)}
+            onTouchEnd={() => updateBaseSpeed(baseSpeed)}
+            className="w-full h-8 appearance-none slider-touch"
+          />
+          <span className="text-white w-12 text-right">{baseSpeed.toFixed(2)}</span>
+        </div>
+        <style jsx>{`
+          input[type='range'].slider-touch {
+            background: transparent;
+            height: 32px;
+          }
+          input[type='range'].slider-touch::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            margin-top: -14px;
+            transition: background 0.2s;
+          }
+          input[type='range'].slider-touch::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 4px;
+            background: #4b5563;
+          }
+          input[type='range'].slider-touch::-moz-range-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background 0.2s;
+          }
+          input[type='range'].slider-touch::-ms-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background 0.2s;
+          }
+          input[type='range'].slider-touch::-ms-fill-lower {
+            background: #4b5563;
+            border-radius: 4px;
+          }
+          input[type='range'].slider-touch::-ms-fill-upper {
+            background: #4b5563;
+            border-radius: 4px;
+          }
+          input[type='range'].slider-touch:focus {
+            outline: none;
+          }
+        `}</style>
         {/* Increment/Decrement */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => incrementSpeed(-0.01)}
-            disabled={isUpdating || baseSpeed <= 0.01}
+            disabled={isUpdating || baseSpeed <= 0}
             className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded disabled:opacity-50"
           >
             -0.01
@@ -91,9 +173,8 @@ export default function AdminSettings() {
             +0.01
           </button>
         </div>
-        
         {/* Numbered Presets */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-7 gap-2">
           {presets.map((speed) => (
             <button
               key={speed}
@@ -109,13 +190,12 @@ export default function AdminSettings() {
             </button>
           ))}
         </div>
-
         {/* Custom Input */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-300">Custom:</span>
           <input
             type="number"
-            min="0.01"
+            min="0"
             step="0.01"
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
