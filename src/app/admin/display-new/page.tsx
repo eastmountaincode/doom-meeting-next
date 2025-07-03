@@ -185,7 +185,7 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
       squareVelocities.current.set(square.participantId, velocity)
       
       // Update video overlay position for this square
-      const videoElement = document.querySelector(`.video-overlay-${square.participantId}`) as HTMLElement
+      const videoElement = document.querySelector(`[data-participant-id="${square.participantId}"]`) as HTMLElement
       const canvas = gl.domElement
       if (videoElement && canvas) {
         // Get canvas position on the page
@@ -348,6 +348,9 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize }: {
   const worldHeight = 16
   const worldWidth = worldHeight * (canvasSize.width / canvasSize.height)
   
+  // Get remote participants to access metadata directly
+  const remoteParticipants = useRemoteParticipants()
+  
   // Convert world coordinates to pixel coordinates
   const worldToPixel = (worldPos: [number, number, number], size: number) => {
     const pixelX = ((worldPos[0] + worldWidth / 2) / worldWidth) * canvasSize.width
@@ -376,12 +379,17 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize }: {
           track => track.participant.identity === square.participantId
         )
         
+        // Find participant from remoteParticipants for metadata (more reliable)
+        const participant = remoteParticipants.find(
+          p => p.identity === square.participantId
+        )
+        
         const position = worldToPixel(square.position, square.size)
         
         // Check camera facing from metadata
         let cameraFacing = 'back'
         try {
-          const metadata = trackRef?.participant.metadata
+          const metadata = participant?.metadata
           if (metadata) {
             const parsed = JSON.parse(metadata)
             cameraFacing = parsed.cameraFacing || 'back'
@@ -393,7 +401,8 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize }: {
         return (
           <div
             key={square.participantId}
-            className={`absolute video-overlay-${square.participantId}`}
+            className="absolute"
+            data-participant-id={square.participantId}
             style={{
               left: position.left,
               top: position.top,
@@ -415,18 +424,45 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize }: {
               />
             )}
             
-            {/* Always show participant name label */}
-            <div 
-              className="absolute bottom-0 left-0 bg-black bg-opacity-80 px-1 py-0.5 text-white font-medium"
-              style={{ fontSize: Math.max(8, position.width * 0.08) }}
-            >
-              {square.participantId}
-            </div>
+                        {/* Show participant name label only if we have a display name */}
+            {(() => {
+              const displayName = getParticipantDisplayName(participant || {})
+              if (displayName) {
+                return (
+                  <div 
+                    className="absolute bottom-0 left-0 bg-black bg-opacity-80 px-1 py-0.5 text-white font-medium"
+                    style={{ fontSize: Math.max(8, position.width * 0.08) }}
+                  >
+                    {displayName}
+                  </div>
+                )
+              }
+              return null
+            })()}
           </div>
         )
       })}
     </div>
   )
+}
+
+// Helper function to extract display name from participant metadata
+function getParticipantDisplayName(participant: { metadata?: string }): string {
+  try {
+    const metadata = participant.metadata
+    if (metadata) {
+      const parsed = JSON.parse(metadata)
+      // Only return the displayName if it exists in metadata
+      if (parsed.displayName) {
+        return parsed.displayName
+      }
+    }
+  } catch {
+    // Metadata parsing failed
+  }
+  
+  // Don't show the long unique identifier - return empty string instead
+  return ''
 }
 
 // Generate consistent color for participant

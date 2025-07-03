@@ -35,7 +35,21 @@ function ParticipantsList() {
               <div className="flex items-center justify-between">
                 {/* Left group: Name and joined date */}
                 <div className="flex flex-col">
-                  <h4 className="text-white font-medium">{participant.identity}</h4>
+                  <h4 className="text-white font-medium">
+                    {(() => {
+                      // Try to get display name from participant metadata, fallback to identity
+                      try {
+                        const metadata = participant.metadata
+                        if (metadata) {
+                          const parsed = JSON.parse(metadata)
+                          return parsed.displayName || participant.identity
+                        }
+                      } catch {
+                        // Metadata parsing failed
+                      }
+                      return participant.identity
+                    })()}
+                  </h4>
                   <div className="text-xs text-gray-500">
                     Joined: {new Date(participant.joinedAt || Date.now()).toLocaleTimeString()}
                   </div>

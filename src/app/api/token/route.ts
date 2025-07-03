@@ -7,6 +7,8 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   const room = req.nextUrl.searchParams.get('room');
   const username = req.nextUrl.searchParams.get('username');
+  const makeUnique = req.nextUrl.searchParams.get('makeUnique') === 'true'; // Whether to make identity unique
+  
   if (!room) {
     return NextResponse.json({ error: 'Missing "room" query parameter' }, { status: 400 });
   } else if (!username) {
@@ -21,7 +23,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
   }
 
-  const at = new AccessToken(apiKey, apiSecret, { identity: username });
+  // Create unique identity if requested (for regular participants to prevent collisions)
+  const identity = makeUnique 
+    ? `${username}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+    : username;
+
+  const at = new AccessToken(apiKey, apiSecret, { identity });
   at.addGrant({ 
     room, 
     roomJoin: true, 

@@ -108,7 +108,19 @@ function LiveKitVideoOverlays({ participantTracks }: { participantTracks: any[] 
                         
                         {/* Participant name overlay */}
                         <div className="absolute bottom-1 left-1 bg-black bg-opacity-80 px-1 py-0.5 text-white text-xs font-medium">
-                            {track.participant.identity}
+                            {(() => {
+                                // Try to get display name from participant metadata, fallback to identity
+                                try {
+                                    const metadata = track.participant.metadata
+                                    if (metadata) {
+                                        const parsed = JSON.parse(metadata)
+                                        return parsed.displayName || track.participant.identity
+                                    }
+                                } catch {
+                                    // Metadata parsing failed
+                                }
+                                return track.participant.identity
+                            })()}
                         </div>
                     </div>
                 )

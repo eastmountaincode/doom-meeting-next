@@ -28,6 +28,26 @@ function LiveKitCameraView() {
   
   const localVideoTrack = tracks.find(track => track.participant.isLocal && track.publication)
 
+  // Set initial metadata with display name when participant joins and connection is ready
+  useEffect(() => {
+    if (localParticipant && screenName) {
+      // Wait a bit for connection to establish, then set metadata
+      const timeoutId = setTimeout(async () => {
+        try {
+          const metadataObj = { displayName: screenName }
+          const metadataString = JSON.stringify(metadataObj)
+          
+          await localParticipant.setMetadata(metadataString)
+          console.log(`📡 Set initial metadata for: ${screenName}`)
+        } catch (error) {
+          console.error('Failed to set initial metadata:', error)
+        }
+      }, 2000) // Wait 2 seconds for connection to establish
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [localParticipant, screenName])
+
   const handleEndMeeting = () => {
     console.log('🔴 User clicked End - leaving room')
     navigateToLanding()
@@ -89,12 +109,27 @@ function LiveKitCameraView() {
         })
       }
       
-      // Send camera facing mode as metadata so admin can see it
+      // Send camera facing mode as metadata so admin can see it, preserving existing metadata
       try {
-        await localParticipant.setMetadata(JSON.stringify({ 
+        // Get current metadata to preserve displayName
+        let currentMetadata = {}
+        try {
+          if (localParticipant.metadata) {
+            currentMetadata = JSON.parse(localParticipant.metadata)
+          }
+        } catch {
+          // If parsing fails, start with empty metadata
+        }
+        
+        // Update with camera facing while preserving other metadata
+        const newMetadata = {
+          ...currentMetadata,
+          displayName: screenName, // Ensure displayName is always set
           cameraFacing: facingMode 
-        }))
-        console.log(`📡 Camera facing metadata sent: ${facingMode}`)
+        }
+        
+        await localParticipant.setMetadata(JSON.stringify(newMetadata))
+        console.log(`📡 Updated metadata for ${screenName}`)
       } catch (metadataError) {
         console.warn('Failed to update metadata:', metadataError)
         // Continue anyway - camera still works, just admin won't see facing mode
@@ -229,7 +264,7 @@ function CameraScreen() {
         setError('')
         
         const response = await fetch(
-          `/api/token?room=doom&username=${encodeURIComponent(screenName)}`
+          `/api/token?room=doom&username=${encodeURIComponent(screenName)}&displayName=${encodeURIComponent(screenName)}&makeUnique=true`
         )
         
         if (!response.ok) {
