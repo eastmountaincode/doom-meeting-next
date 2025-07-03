@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     roomJoin: true, 
     canPublish: true, 
     canSubscribe: true,
-    canUpdateOwnMetadata: true  // Allow participants to update their own metadata
+    canUpdateOwnMetadata: true
   });
 
   return NextResponse.json(

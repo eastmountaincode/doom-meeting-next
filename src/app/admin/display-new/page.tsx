@@ -14,6 +14,64 @@ import { Track } from "livekit-client"
 import { useVideoSquares } from '../../../hooks/useVideoSquares'
 import { VideoSquare as VideoSquareType } from '../../../types/videoSquare'
 
+// Store collision shapes for each participant
+const participantCollisionShapes = new Map<string, Array<{x: number, y: number}>>()
+
+// Polygon collision detection using SAT (Separating Axis Theorem)
+function getPolygonAxes(vertices: Array<{x: number, y: number}>): Array<{x: number, y: number}> {
+  const axes: Array<{x: number, y: number}> = []
+  for (let i = 0; i < vertices.length; i++) {
+    const v1 = vertices[i]
+    const v2 = vertices[(i + 1) % vertices.length]
+    const edge = { x: v2.x - v1.x, y: v2.y - v1.y }
+    const normal = { x: -edge.y, y: edge.x }
+    const length = Math.sqrt(normal.x * normal.x + normal.y * normal.y)
+    axes.push({ x: normal.x / length, y: normal.y / length })
+  }
+  return axes
+}
+
+function projectPolygon(vertices: Array<{x: number, y: number}>, axis: {x: number, y: number}): {min: number, max: number} {
+  let min = vertices[0].x * axis.x + vertices[0].y * axis.y
+  let max = min
+  for (let i = 1; i < vertices.length; i++) {
+    const dot = vertices[i].x * axis.x + vertices[i].y * axis.y
+    if (dot < min) min = dot
+    if (dot > max) max = dot
+  }
+  return { min, max }
+}
+
+function polygonsCollide(vertices1: Array<{x: number, y: number}>, pos1: [number, number], size1: number,
+                        vertices2: Array<{x: number, y: number}>, pos2: [number, number], size2: number): boolean {
+  // Transform vertices to world positions
+  const worldVertices1 = vertices1.map(v => ({
+    x: pos1[0] + v.x * size1,
+    y: pos1[1] + v.y * size1
+  }))
+  const worldVertices2 = vertices2.map(v => ({
+    x: pos2[0] + v.x * size2,
+    y: pos2[1] + v.y * size2
+  }))
+  
+  // Get all axes to test
+  const axes1 = getPolygonAxes(worldVertices1)
+  const axes2 = getPolygonAxes(worldVertices2)
+  const allAxes = [...axes1, ...axes2]
+  
+  // Test separation on each axis
+  for (const axis of allAxes) {
+    const proj1 = projectPolygon(worldVertices1, axis)
+    const proj2 = projectPolygon(worldVertices2, axis)
+    
+    if (proj1.max < proj2.min || proj2.max < proj1.min) {
+      return false // Separating axis found
+    }
+  }
+  
+  return true // No separating axis found, polygons collide
+}
+
 // Simple square component for physics - video will be overlaid via DOM
 function VideoSquare({ square }: { square: VideoSquareType }) {
   const meshRef = useRef<THREE.Mesh>(null)
@@ -29,8 +87,10 @@ function VideoSquare({ square }: { square: VideoSquareType }) {
     <mesh ref={meshRef} position={square.position}>
       <planeGeometry args={[square.size, square.size]} />
       <meshBasicMaterial 
-        color="#000000" // Black squares for video overlay
+        color="#000000"
         side={THREE.DoubleSide}
+        transparent={true}
+        opacity={0} // Completely invisible - only blobs visible
       />
     </mesh>
   )
@@ -86,6 +146,8 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     for (const id of currentParticipantIds) {
       if (!liveParticipantIds.has(id)) {
         removeParticipant(id)
+        // Clean up collision shape
+        participantCollisionShapes.delete(id)
       }
     }
 
@@ -93,6 +155,9 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     for (const participant of remoteParticipants) {
       const id = participant.identity
       if (!id.startsWith('admin') && !id.startsWith('display') && !currentParticipantIds.has(id)) {
+        // Generate and store collision shape for this participant
+        const shapeData = generateParticipantShape(id)
+        participantCollisionShapes.set(id, shapeData.collisionVertices)
         addParticipant(id, { color: generateParticipantColor(id) })
       }
     }
@@ -108,29 +173,26 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     
   }, [participantTracks, remoteParticipants, squares, addParticipant, removeParticipant, updateSquareVideo])
 
-  // Update velocities when base speed changes
+  // Store previous base speed to detect changes
+  const prevBaseSpeed = useRef(baseSpeed)
+  
+  // Update velocities when base speed changes (not when squares change)
   useEffect(() => {
-    squares.forEach(square => {
-      const currentVel = squareVelocities.current.get(square.participantId)
-      if (currentVel) {
-        // Scale existing velocity to new base speed
+    if (prevBaseSpeed.current !== baseSpeed) {
+      // Only update if base speed actually changed - scale all existing velocities
+      for (const [participantId, currentVel] of squareVelocities.current) {
         const currentSpeed = Math.sqrt(currentVel[0] * currentVel[0] + currentVel[1] * currentVel[1])
         if (currentSpeed > 0) {
           const scale = baseSpeed / currentSpeed
-          squareVelocities.current.set(square.participantId, [
+          squareVelocities.current.set(participantId, [
             currentVel[0] * scale,
             currentVel[1] * scale
           ])
         }
-      } else {
-        // Generate new velocity with current base speed
-        squareVelocities.current.set(square.participantId, [
-          (Math.random() - 0.5) * baseSpeed * 2,
-          (Math.random() - 0.5) * baseSpeed * 2
-        ])
       }
-    })
-  }, [baseSpeed, squares])
+      prevBaseSpeed.current = baseSpeed
+    }
+  }, [baseSpeed])
 
   // Physics animation loop (same frame rate control as webgl-test-3)
   useFrame(() => {
@@ -211,31 +273,41 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
       }
     })
 
-    // Square-to-square collision detection (exact same as webgl-test-3)
+    // Polygon-to-polygon collision detection using actual blob shapes
     for (let i = 0; i < squares.length; i++) {
       for (let j = i + 1; j < squares.length; j++) {
         const squareA = squares[i]
         const squareB = squares[j]
         
-        const x1 = squareA.position[0]
-        const y1 = squareA.position[1] 
-        const x2 = squareB.position[0]
-        const y2 = squareB.position[1]
-        const size1 = squareA.size
-        const size2 = squareB.size
-
-        // AABB collision detection with different sizes (same as webgl-test-3)
-        if (
-          Math.abs(x1 - x2) < (size1 + size2) / 2 &&
-          Math.abs(y1 - y2) < (size1 + size2) / 2
-        ) {
-          // Small separation push to prevent sticking (same as webgl-test-3)
-          const dx = x2 - x1
-          const dy = y2 - y1
+        // Get collision shapes for both participants
+        const shapeA = participantCollisionShapes.get(squareA.participantId)
+        const shapeB = participantCollisionShapes.get(squareB.participantId)
+        
+        let collision = false
+        
+        if (shapeA && shapeB) {
+          // Use actual polygon collision detection
+          collision = polygonsCollide(
+            shapeA, [squareA.position[0], squareA.position[1]], squareA.size,
+            shapeB, [squareB.position[0], squareB.position[1]], squareB.size
+          )
+        } else {
+          // Fallback to distance-based collision if shapes not available
+          const dx = squareB.position[0] - squareA.position[0]
+          const dy = squareB.position[1] - squareA.position[1]
+          const distance = Math.sqrt(dx * dx + dy * dy)
+          const minDistance = (squareA.size + squareB.size) / 2.2
+          collision = distance < minDistance
+        }
+        
+        if (collision) {
+          // Collision detected - apply separation and velocity swap
+          const dx = squareB.position[0] - squareA.position[0]
+          const dy = squareB.position[1] - squareA.position[1]
           const distance = Math.sqrt(dx * dx + dy * dy)
           
           if (distance > 0.001) {
-            // Normalize and apply tiny separation (same force as webgl-test-3)
+            // Normalize and apply separation
             const separationForce = 0.02
             const separationX = (dx / distance) * separationForce
             const separationY = (dy / distance) * separationForce
@@ -246,7 +318,9 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
             let newX2 = squareB.position[0] + separationX
             let newY2 = squareB.position[1] + separationY
             
-            // Clamp positions to stay within world bounds (same as webgl-test-3)
+            // Clamp positions to stay within world bounds
+            const size1 = squareA.size
+            const size2 = squareB.size
             newX1 = Math.max(-halfWidth + size1/2, Math.min(halfWidth - size1/2, newX1))
             newY1 = Math.max(-halfHeight + size1/2, Math.min(halfHeight - size1/2, newY1))
             newX2 = Math.max(-halfWidth + size2/2, Math.min(halfWidth - size2/2, newX2))
@@ -258,7 +332,7 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
             squareB.position[0] = newX2
             squareB.position[1] = newY2
 
-            // Collision detected: swap velocities (same as webgl-test-3)
+            // Collision detected: swap velocities
             const velA = squareVelocities.current.get(squareA.participantId) || [0, 0]
             const velB = squareVelocities.current.get(squareB.participantId) || [0, 0]
             
@@ -270,12 +344,13 @@ function MovingSquares({ participantTracks, onSquaresUpdate, baseSpeed }: {
     }
   })
 
-  // Cleanup velocities when squares are removed
+  // Cleanup velocities and collision shapes when squares are removed
   useEffect(() => {
     const currentIds = new Set(squares.map(s => s.participantId))
     for (const [id] of squareVelocities.current) {
       if (!currentIds.has(id)) {
         squareVelocities.current.delete(id)
+        participantCollisionShapes.delete(id)
       }
     }
   }, [squares])
@@ -340,10 +415,11 @@ function useCanvasSize() {
 }
 
 // Video overlays component (renders outside Canvas)
-function LiveKitVideoOverlays({ squares, participantTracks, canvasSize }: { 
+function LiveKitVideoOverlays({ squares, participantTracks, canvasSize, showNameLabels }: { 
   squares: VideoSquareType[], 
   participantTracks: TrackReferenceOrPlaceholder[], 
-  canvasSize: { width: number, height: number } 
+  canvasSize: { width: number, height: number },
+  showNameLabels: boolean
 }) {
   const worldHeight = 16
   const worldWidth = worldHeight * (canvasSize.width / canvasSize.height)
@@ -403,42 +479,55 @@ function LiveKitVideoOverlays({ squares, participantTracks, canvasSize }: {
             key={square.participantId}
             className="absolute"
             data-participant-id={square.participantId}
-            style={{
-              left: position.left,
-              top: position.top,
-              width: position.width,
-              height: position.height,
-              borderRadius: '4px',
-              overflow: 'hidden',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              backgroundColor: trackRef?.publication?.isSubscribed ? 'transparent' : '#000'
-            }}
+            style={{ width: '100%', height: '100%' }}
           >
-            {/* Only render video if track is subscribed */}
-            {trackRef?.publication?.isSubscribed && (
-              <VideoTrack
-                trackRef={trackRef}
-                className={`w-full h-full object-cover ${
-                  cameraFacing === 'front' ? 'scale-x-[-1]' : ''
-                }`}
-              />
-            )}
-            
-                        {/* Show participant name label only if we have a display name */}
-            {(() => {
-              const displayName = getParticipantDisplayName(participant || {})
-              if (displayName) {
-                return (
-                  <div 
-                    className="absolute bottom-0 left-0 bg-black bg-opacity-80 px-1 py-0.5 text-white font-medium"
-                    style={{ fontSize: Math.max(8, position.width * 0.08) }}
-                  >
-                    {displayName}
-                  </div>
-                )
-              }
-              return null
-            })()}
+            <div className="relative flex flex-col items-center w-full h-full">
+              {/* Blob video shape */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  clipPath: generateParticipantShape(square.participantId).clipPath,
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  backgroundColor: trackRef?.publication?.isSubscribed ? 'transparent' : '#000',
+                }}
+              >
+                {trackRef?.publication?.isSubscribed && (
+                  <VideoTrack
+                    trackRef={trackRef}
+                    className={`w-full h-full object-cover ${
+                      cameraFacing === 'front' ? 'scale-x-[-1]' : ''
+                    }`}
+                  />
+                )}
+              </div>
+              {/* Name label conditionally visible below the blob */}
+              {showNameLabels && (() => {
+                const displayName = getParticipantDisplayName(participant || {})
+                if (displayName) {
+                  return (
+                    <div
+                      className="bg-black bg-opacity-80 px-0 py-0 text-white font-medium rounded text-center"
+                      style={{
+                        fontSize: '1.1em',
+                        pointerEvents: 'auto',
+                        zIndex: 10,
+                        minWidth: '60px',
+                        maxWidth: '120px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        marginTop: '-2.5em',
+                      }}
+                    >
+                      {displayName}
+                    </div>
+                  )
+                }
+                return null
+              })()}
+            </div>
           </div>
         )
       })}
@@ -465,6 +554,56 @@ function getParticipantDisplayName(participant: { metadata?: string }): string {
   return ''
 }
 
+// Generate round/circular shape and return both CSS and collision data
+function generateParticipantShape(participantId: string): { 
+  clipPath: string, 
+  collisionVertices: Array<{x: number, y: number}> 
+} {
+  // Use participant ID as seed for consistent shapes
+  let seed = 0
+  for (let i = 0; i < participantId.length; i++) {
+    seed = participantId.charCodeAt(i) + ((seed << 5) - seed)
+  }
+  
+  // Seeded random function
+  const seededRandom = (min: number, max: number) => {
+    seed = (seed * 9301 + 49297) % 233280
+    return min + (seed / 233280) * (max - min)
+  }
+  
+  // Generate 16-24 points for very smooth, round shapes
+  const numPoints = Math.floor(seededRandom(16, 25))
+  const cssPoints: string[] = []
+  const collisionVertices: Array<{x: number, y: number}> = []
+  
+  for (let i = 0; i < numPoints; i++) {
+    // Even angle distribution for circular shape
+    const baseAngle = (i / numPoints) * 360
+    const angleVariation = seededRandom(-2, 2) // Minimal variation for round shapes
+    const angle = baseAngle + angleVariation
+    
+    // Keep radius very consistent for circular shapes: 46% to 49% from center
+    const radius = seededRandom(46, 49)
+    
+    // Convert polar to cartesian, centered at 50%, 50%
+    const cssX = Math.max(5, Math.min(95, 50 + radius * Math.cos(angle * Math.PI / 180)))
+    const cssY = Math.max(5, Math.min(95, 50 + radius * Math.sin(angle * Math.PI / 180)))
+    
+    // CSS points (percentages)
+    cssPoints.push(`${cssX.toFixed(1)}% ${cssY.toFixed(1)}%`)
+    
+    // Collision vertices (normalized -0.5 to 0.5 for square size)
+    const collisionX = (cssX - 50) / 100 // Convert from 0-100% to -0.5 to 0.5
+    const collisionY = (cssY - 50) / 100
+    collisionVertices.push({ x: collisionX, y: collisionY })
+  }
+  
+  return {
+    clipPath: `polygon(${cssPoints.join(', ')})`,
+    collisionVertices
+  }
+}
+
 // Generate consistent color for participant
 function generateParticipantColor(participantId: string): string {
   const colors = [
@@ -487,6 +626,7 @@ function VideoSquareDisplay() {
   const canvasSize = useCanvasSize()
   const [squares, setSquares] = useState<VideoSquareType[]>([])
   const [currentBaseSpeed, setCurrentBaseSpeed] = useState(0.06)
+  const [showNameLabels, setShowNameLabels] = useState(true)
   
   // Listen for admin base speed changes via Pusher
   useEffect(() => {
@@ -505,12 +645,17 @@ function VideoSquareDisplay() {
         
         channel = pusher.subscribe('display-channel')
         
-        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number }) => {
+        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean }) => {
           console.log('Received display event:', data)
           
           if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
             console.log('Updating base speed to:', data.baseSpeed)
             setCurrentBaseSpeed(data.baseSpeed)
+          }
+          
+          if (data.type === 'TOGGLE_NAME_LABELS' && data.showNameLabels !== undefined) {
+            console.log('Updating name labels visibility to:', data.showNameLabels)
+            setShowNameLabels(data.showNameLabels)
           }
         })
         
@@ -585,6 +730,7 @@ function VideoSquareDisplay() {
           squares={squares}
           participantTracks={tracksToUse}
           canvasSize={canvasSize}
+          showNameLabels={showNameLabels}
         />
       </div>
     </div>
