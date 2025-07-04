@@ -618,11 +618,11 @@ function generateParticipantColor(participantId: string): string {
 
 function hslToHex(h: number, s: number, l: number) {
   // Convert h,s,l (0-360, 0-100, 0-100) to hex string
-  s /= 100;
-  l /= 100;
-  let c = (1 - Math.abs(2 * l - 1)) * s;
-  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  let m = l - c / 2;
+      s /= 100;
+    l /= 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
   let r = 0, g = 0, b = 0;
   if (0 <= h && h < 60) { r = c; g = x; b = 0; }
   else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
@@ -630,7 +630,7 @@ function hslToHex(h: number, s: number, l: number) {
   else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
   else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
   else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
-  let toHex = (v: number) => {
+  const toHex = (v: number) => {
     const h = Math.round((v + m) * 255).toString(16)
     return h.length === 1 ? '0' + h : h
   }
@@ -770,17 +770,18 @@ function VideoSquareDisplay() {
 
   // Listen for admin events via Pusher
   useEffect(() => {
-    let pusher: any = null
-    let channel: any = null
+    let pusher: { subscribe: (channel: string) => { bind: (event: string, callback: (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; qrCodeColor?: 'black' | 'white'; backgroundColor?: string; saturation?: number; lightness?: number; speed?: number; startHue?: number }) => void) => void; unbind_all: () => void }; connection: { bind: (event: string, callback: () => void) => void }; unsubscribe: (channel: string) => void; disconnect: () => void } | null = null
+    let channel: { bind: (event: string, callback: (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; qrCodeColor?: 'black' | 'white'; backgroundColor?: string; saturation?: number; lightness?: number; speed?: number; startHue?: number }) => void) => void; unbind_all: () => void } | null = null
 
     const connectToPusher = async () => {
       try {
         const Pusher = (await import('pusher-js')).default
         pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
           cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-        })
-        channel = pusher.subscribe('display-channel')
-        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; qrCodeColor?: 'black' | 'white'; backgroundColor?: string; saturation?: number; lightness?: number; speed?: number; startHue?: number }) => {
+        }) as typeof pusher
+        if (pusher) {
+          channel = pusher.subscribe('display-channel')
+          channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; qrCodeColor?: 'black' | 'white'; backgroundColor?: string; saturation?: number; lightness?: number; speed?: number; startHue?: number }) => {
           console.log('Received display event:', data)
           if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
             setCurrentBaseSpeed(data.baseSpeed)
@@ -843,10 +844,11 @@ function VideoSquareDisplay() {
             console.log('Display received SET_COLOR_CYCLE_SPEED with:', { speed: data.speed })
             setColorCycleSpeed(data.speed)
           }
-        })
-        pusher.connection.bind('connected', () => {
-          console.log('Pusher connected for speed control!')
-        })
+          })
+          pusher.connection.bind('connected', () => {
+            console.log('Pusher connected for speed control!')
+          })
+        }
       } catch (error) {
         console.error('Failed to initialize Pusher:', error)
       }

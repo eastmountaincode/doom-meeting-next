@@ -3,25 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { HexColorPicker } from 'react-colorful'
 
-function hslToHex(h: number, s: number, l: number) {
-  s /= 100;
-  l /= 100;
-  let c = (1 - Math.abs(2 * l - 1)) * s;
-  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  let m = l - c / 2;
-  let r = 0, g = 0, b = 0;
-  if (0 <= h && h < 60) { r = c; g = x; b = 0; }
-  else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
-  else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
-  else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
-  else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
-  else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
-  let toHex = (v: number) => {
-    const h = Math.round((v + m) * 255).toString(16)
-    return h.length === 1 ? '0' + h : h
-  }
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
-}
+
 
 function hexToHSL(hex: string): { h: number, s: number, l: number } {
   // Remove # if present
@@ -38,7 +20,8 @@ function hexToHSL(hex: string): { h: number, s: number, l: number } {
   }
   r /= 255; g /= 255; b /= 255
   const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  let h = 0, s = 0, l = (max + min) / 2
+  let h = 0, s = 0
+  const l = (max + min) / 2
   if (max !== min) {
     const d = max - min
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
@@ -57,45 +40,39 @@ export default function AdminEvents() {
   const [lastEvent, setLastEvent] = useState<string>('')
   const [showNameLabels, setShowNameLabels] = useState(true)
   const [showQrCode, setShowQrCode] = useState(true)
-  // Initialize QR code color based on background color for good contrast
-  const getContrastColor = (bgColor: string): 'black' | 'white' => {
-    const hsl = hexToHSL(bgColor)
-    return hsl.l > 50 ? 'black' : 'white'
-  }
+
   
   const [qrCodeColor, setQrCodeColor] = useState<'black' | 'white'>('white')
   const [backgroundColor, setBackgroundColor] = useState('#000000')
   const [colorCycleActive, setColorCycleActive] = useState(false)
   const [colorCycleSpeed, setColorCycleSpeed] = useState(30) // Default speed (lower = faster)
-  const colorCycleRef = useRef(false)
-  const animationFrameRef = useRef<number | null>(null)
-  const lastColorSentRef = useRef(0)
   const lastSpeedSentRef = useRef(0)
   
   // Listen for display color updates when cycle stops
   useEffect(() => {
-    let pusher: any = null
-    let channel: any = null
+    let pusher: { subscribe: (channel: string) => { bind: (event: string, callback: (data: { backgroundColor: string }) => void) => void; unbind_all: () => void }; connection: { bind: (event: string, callback: () => void) => void }; unsubscribe: (channel: string) => void; disconnect: () => void } | null = null
+    let channel: { bind: (event: string, callback: (data: { backgroundColor: string }) => void) => void; unbind_all: () => void } | null = null
 
     const connectToPusher = async () => {
       try {
         const Pusher = (await import('pusher-js')).default
         pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
           cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-        })
-        channel = pusher.subscribe('admin-channel')
-        channel.bind('display-color-update', (data: { backgroundColor: string }) => {
-          console.log('Received display color update:', data.backgroundColor)
-          setBackgroundColor(data.backgroundColor)
-          // Update S/L values from the new color
-          const hsl = hexToHSL(data.backgroundColor)
-          setSatBase(hsl.s)
-          setLightBase(hsl.l)
-          setHueBase(hsl.h)
-        })
-        pusher.connection.bind('connected', () => {
-          console.log('Pusher connected for admin color updates!')
-        })
+        }) as typeof pusher
+        if (pusher) {
+          channel = pusher.subscribe('admin-channel')
+          channel.bind('display-color-update', (data: { backgroundColor: string }) => {
+            console.log('Received display color update:', data.backgroundColor)
+            setBackgroundColor(data.backgroundColor)
+            // Update S/L values from the new color
+            const hsl = hexToHSL(data.backgroundColor)
+            setSatBase(hsl.s)
+            setLightBase(hsl.l)
+          })
+          pusher.connection.bind('connected', () => {
+            console.log('Pusher connected for admin color updates!')
+          })
+        }
       } catch (error) {
         console.error('Failed to initialize Pusher for admin:', error)
       }
@@ -114,7 +91,6 @@ export default function AdminEvents() {
   
   // Initialize S/L values from the starting black color
   const initialHSL = hexToHSL('#000000')
-  const [hueBase, setHueBase] = useState(initialHSL.h)
   const [satBase, setSatBase] = useState(initialHSL.s)
   const [lightBase, setLightBase] = useState(initialHSL.l)
 
@@ -153,7 +129,6 @@ export default function AdminEvents() {
     const hsl = hexToHSL(color)
     setSatBase(hsl.s)
     setLightBase(hsl.l)
-    setHueBase(hsl.h)
   }
 
   // Send color transition on mouse/touch up
@@ -202,12 +177,7 @@ export default function AdminEvents() {
     await triggerEvent('SET_QR_CODE_COLOR', { qrCodeColor: newColor })
   }
 
-  // Set static color and stop color cycle
-  const handleSetStaticColor = async () => {
-    setColorCycleActive(false)
-    await triggerEvent('STOP_COLOR_CYCLE')
-    await triggerEvent('SET_BACKGROUND_COLOR', { backgroundColor })
-  }
+
 
   // Reset to black and stop color cycle
   const handleReset = async () => {
