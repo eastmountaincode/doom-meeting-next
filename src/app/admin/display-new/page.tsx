@@ -12,7 +12,7 @@ import { useCanvasSize } from '../../../hooks/useCanvasSize'
 import { useColorSystem } from '../../../hooks/useColorSystem'
 import { usePusherEvents } from '../../../hooks/usePusherEvents'
 import MovingSquares from '../../../components/MovingSquares'
-import LiveKitVideoOverlays from '../../../components/LiveKitVideoOverlays'
+import VideoContent from '../../../components/VideoContent'
 import TextOverlay from '../../../components/TextOverlay'
 import ResponsiveCamera from '../../../components/ResponsiveCamera'
 import QRCode from '../../../components/QRCode'
@@ -115,6 +115,7 @@ function VideoSquareDisplay() {
           style={{ width: "100%", height: "100%", background: colorSystem.backgroundColor }}
         >
           <ResponsiveCamera />
+          {/* Just the squares, handles the physics */}
           <MovingSquares 
             participantTracks={tracksToUse} 
             onSquaresUpdate={setSquares}
@@ -122,8 +123,8 @@ function VideoSquareDisplay() {
           />
         </Canvas>
         
-        {/* Video Overlays */}
-        <LiveKitVideoOverlays 
+        {/* Video content - handles both participant videos and placeholders */}
+        <VideoContent 
           squares={squares}
           participantTracks={tracksToUse}
           canvasSize={canvasSize}

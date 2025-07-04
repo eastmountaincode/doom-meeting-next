@@ -6,6 +6,11 @@ export interface VideoSquare {
   videoTrack?: MediaStreamTrack
   color: string
   timestamp: number // When this square was created
+  type: 'participant' | 'placeholder'
+  placeholderData?: {
+    name: string
+    url: string
+  }
 }
 
 export interface PlaceholderStream {

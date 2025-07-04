@@ -31,7 +31,8 @@ export class VideoSquareManager {
       velocity: this.generateRandomVelocity(),
       size: newSize,
       color: options?.color || this.generateRandomColor(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      type: 'participant'
     }
 
     this.squares.set(participantId, square)
