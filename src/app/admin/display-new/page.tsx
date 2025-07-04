@@ -616,6 +616,27 @@ function generateParticipantColor(participantId: string): string {
   return colors[Math.abs(hash) % colors.length]
 }
 
+function hslToHex(h: number, s: number, l: number) {
+  // Convert h,s,l (0-360, 0-100, 0-100) to hex string
+  s /= 100;
+  l /= 100;
+  let c = (1 - Math.abs(2 * l - 1)) * s;
+  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  let m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+  else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+  else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+  else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+  else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+  else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+  let toHex = (v: number) => {
+    const h = Math.round((v + m) * 255).toString(16)
+    return h.length === 1 ? '0' + h : h
+  }
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
 // LiveKit integration component with video overlay system
 function VideoSquareDisplay() {
   const canvasSize = useCanvasSize()
@@ -623,59 +644,214 @@ function VideoSquareDisplay() {
   const [currentBaseSpeed, setCurrentBaseSpeed] = useState(0.06)
   const [showNameLabels, setShowNameLabels] = useState(true)
   const [showQrCode, setShowQrCode] = useState(true)
-  const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff')
+  const [qrCodeColor, setQrCodeColor] = useState<'black' | 'white'>('white')
+  const [backgroundColor, setBackgroundColor] = useState<string>('#000000')
+  const [colorCycleActive, setColorCycleActive] = useState(false)
+  const [colorCycleSaturation, setColorCycleSaturation] = useState(0) // Start with 0, will be set by admin
+  const [colorCycleLightness, setColorCycleLightness] = useState(100) // Start with 100, will be set by admin
+  const [colorCycleSpeed, setColorCycleSpeed] = useState(30)
+  const [colorCycleStartTime, setColorCycleStartTime] = useState(0)
+  const colorCycleRef = useRef(false)
+  const animationFrameRef = useRef<number | null>(null)
+  const currentDisplayedColorRef = useRef<string>('#000000') // Track the actual displayed color at all times
   
-  // Listen for admin base speed changes via Pusher
+  // Color transition state
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [transitionStartColor, setTransitionStartColor] = useState('#000000')
+  const [transitionTargetColor, setTransitionTargetColor] = useState('#000000')
+  const [transitionStartTime, setTransitionStartTime] = useState(0)
+  const transitionDuration = 1000 // 1000ms transition (1 second)
+
+  // Function to interpolate between two hex colors
+  const interpolateColors = (color1: string, color2: string, factor: number): string => {
+    // Convert hex to RGB
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 0, g: 0, b: 0 }
+    }
+    
+    // Convert RGB to hex
+    const rgbToHex = (r: number, g: number, b: number) => {
+      const toHex = (n: number) => {
+        const hex = Math.round(n).toString(16)
+        return hex.length === 1 ? '0' + hex : hex
+      }
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+    }
+    
+    const rgb1 = hexToRgb(color1)
+    const rgb2 = hexToRgb(color2)
+    
+    const r = rgb1.r + (rgb2.r - rgb1.r) * factor
+    const g = rgb1.g + (rgb2.g - rgb1.g) * factor
+    const b = rgb1.b + (rgb2.b - rgb1.b) * factor
+    
+    return rgbToHex(r, g, b)
+  }
+
+  // Function to send current color back to admin
+  const sendColorUpdateToAdmin = async (color: string) => {
+    try {
+      await fetch('/api/admin/trigger-event', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'DISPLAY_COLOR_UPDATE',
+          backgroundColor: color,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to send color update to admin:', error)
+    }
+  }
+
+  // Color cycling animation (display side)
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!colorCycleActive || isTransitioning) {
+      colorCycleRef.current = false
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+      return
+    }
+    colorCycleRef.current = true
+    const animate = () => {
+      if (!colorCycleRef.current || isTransitioning) return
+      const now = Date.now()
+      const elapsed = now - colorCycleStartTime
+      const hue = (elapsed / colorCycleSpeed) % 360
+      const hexColor = hslToHex(hue, colorCycleSaturation, colorCycleLightness)
+      setBackgroundColor(hexColor)
+      currentDisplayedColorRef.current = hexColor // Track the actual displayed color
+      animationFrameRef.current = requestAnimationFrame(animate)
+    }
+    animate()
+    return () => {
+      colorCycleRef.current = false
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+    }
+  }, [colorCycleActive, colorCycleSaturation, colorCycleLightness, colorCycleSpeed, colorCycleStartTime, isTransitioning])
+
+  // Color transition animation
+  useEffect(() => {
+    if (!isTransitioning) return
+    
+    const animateTransition = () => {
+      const now = Date.now()
+      const elapsed = now - transitionStartTime
+      const progress = Math.min(elapsed / transitionDuration, 1)
+      
+      // Use ease-in-out easing
+      const easedProgress = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2
+      
+      const currentColor = interpolateColors(transitionStartColor, transitionTargetColor, easedProgress)
+      setBackgroundColor(currentColor)
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateTransition)
+      } else {
+        setIsTransitioning(false)
+      }
+    }
+    
+    animateTransition()
+  }, [isTransitioning, transitionStartColor, transitionTargetColor, transitionStartTime, transitionDuration])
+
+  // Track the actual displayed color whenever backgroundColor changes
+  useEffect(() => {
+    currentDisplayedColorRef.current = backgroundColor
+  }, [backgroundColor])
+
+  // Listen for admin events via Pusher
+  useEffect(() => {
     let pusher: any = null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let channel: any = null
 
     const connectToPusher = async () => {
       try {
         const Pusher = (await import('pusher-js')).default
-        
         pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
           cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
         })
-        
         channel = pusher.subscribe('display-channel')
-        
-        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; backgroundColor?: string }) => {
+        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; qrCodeColor?: 'black' | 'white'; backgroundColor?: string; saturation?: number; lightness?: number; speed?: number; startHue?: number }) => {
           console.log('Received display event:', data)
-          
           if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
-            console.log('Updating base speed to:', data.baseSpeed)
             setCurrentBaseSpeed(data.baseSpeed)
           }
-          
           if (data.type === 'TOGGLE_NAME_LABELS' && data.showNameLabels !== undefined) {
-            console.log('Updating name labels visibility to:', data.showNameLabels)
             setShowNameLabels(data.showNameLabels)
           }
-
           if (data.type === 'TOGGLE_QR_CODE' && data.showQrCode !== undefined) {
-            console.log('Updating QR code visibility to:', data.showQrCode)
             setShowQrCode(data.showQrCode)
           }
-
+          if (data.type === 'SET_QR_CODE_COLOR' && data.qrCodeColor !== undefined) {
+            setQrCodeColor(data.qrCodeColor)
+          }
           if (data.type === 'SET_BACKGROUND_COLOR' && data.backgroundColor) {
             setBackgroundColor(data.backgroundColor)
+            setColorCycleActive(false)
+            colorCycleRef.current = false
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+          }
+          if (data.type === 'SET_BACKGROUND_COLOR_TRANSITION' && data.backgroundColor) {
+            // Start smooth transition to new color
+            // Use the actual current displayed color
+            const currentColor = currentDisplayedColorRef.current
+            console.log('Starting transition from:', currentColor, 'to:', data.backgroundColor)
+            setTransitionStartColor(currentColor)
+            setTransitionTargetColor(data.backgroundColor)
+            setTransitionStartTime(Date.now())
+            setIsTransitioning(true)
+            // Don't immediately change backgroundColor - let transition handle it
+            setColorCycleActive(false)
+            colorCycleRef.current = false
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+          }
+          if (data.type === 'START_COLOR_CYCLE') {
+            console.log('Display received START_COLOR_CYCLE with:', { 
+              saturation: data.saturation, 
+              lightness: data.lightness,
+              speed: data.speed,
+              startHue: data.startHue
+            })
+            setColorCycleActive(true)
+            if (data.saturation !== undefined) setColorCycleSaturation(data.saturation)
+            if (data.lightness !== undefined) setColorCycleLightness(data.lightness)
+            if (data.speed !== undefined) setColorCycleSpeed(data.speed)
+            // Calculate start time so animation begins from the current hue position
+            if (data.startHue !== undefined && data.speed !== undefined) {
+              const now = Date.now()
+              const startTime = now - (data.startHue * data.speed)
+              setColorCycleStartTime(startTime)
+            }
+          }
+          if (data.type === 'STOP_COLOR_CYCLE') {
+            setColorCycleActive(false)
+            colorCycleRef.current = false
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+            // Send back the actual color that was showing during the animation
+            sendColorUpdateToAdmin(currentDisplayedColorRef.current)
+          }
+          if (data.type === 'SET_COLOR_CYCLE_SPEED' && data.speed !== undefined) {
+            console.log('Display received SET_COLOR_CYCLE_SPEED with:', { speed: data.speed })
+            setColorCycleSpeed(data.speed)
           }
         })
-        
         pusher.connection.bind('connected', () => {
           console.log('Pusher connected for speed control!')
         })
-        
       } catch (error) {
         console.error('Failed to initialize Pusher:', error)
       }
     }
-
     connectToPusher()
-
     return () => {
       if (channel) {
         channel.unbind_all()
@@ -684,6 +860,7 @@ function VideoSquareDisplay() {
       if (pusher) {
         pusher.disconnect()
       }
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
   }, [])
   
@@ -740,7 +917,7 @@ function VideoSquareDisplay() {
       </div>
       
       {/* QR Code */}
-      <QRCode show={showQrCode} />
+      <QRCode show={showQrCode} color={qrCodeColor} />
     </div>
   )
 }

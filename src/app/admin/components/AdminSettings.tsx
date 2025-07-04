@@ -27,7 +27,7 @@ export default function AdminSettings() {
 
   const throttledUpdateBaseSpeed = (newSpeed: number) => {
     const now = Date.now()
-    if (now - lastSpeedSentRef.current > 50) {
+    if (now - lastSpeedSentRef.current > 150) {
       lastSpeedSentRef.current = now
       updateBaseSpeed(newSpeed)
     }

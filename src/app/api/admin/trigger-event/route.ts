@@ -29,8 +29,16 @@ export async function POST(request: NextRequest) {
 
     console.log('Broadcasting display screen event:', event)
     
-    // Trigger the event on Pusher
-    await pusher.trigger('display-channel', 'display-screen-event', event)
+    // Handle different event types
+    if (body.type === 'DISPLAY_COLOR_UPDATE') {
+      // Send color update to admin channel
+      await pusher.trigger('admin-channel', 'display-color-update', {
+        backgroundColor: body.backgroundColor
+      })
+    } else {
+      // Send other events to display channel
+      await pusher.trigger('display-channel', 'display-screen-event', event)
+    }
     
     return Response.json({ 
       success: true, 

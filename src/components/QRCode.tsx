@@ -3,9 +3,10 @@ import { QRCodeSVG } from 'qrcode.react'
 interface QRCodeProps {
   show: boolean
   size?: number
+  color?: 'black' | 'white'
 }
 
-export default function QRCode({ show, size = 120 }: QRCodeProps) {
+export default function QRCode({ show, size = 120, color = 'black' }: QRCodeProps) {
   if (!show) return null
 
   // Always use the main site URL for the QR code
@@ -23,8 +24,10 @@ export default function QRCode({ show, size = 120 }: QRCodeProps) {
         width: containerSize,
         pointerEvents: 'none',
         backdropFilter: 'blur(8px)',
-        background: 'rgba(255,255,255,0.7)',
+        background: 'rgba(255,255,255,0.0)',
         boxSizing: 'border-box',
+        padding: 8,
+        borderRadius: 3,
       }}
     >
       <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -33,6 +36,7 @@ export default function QRCode({ show, size = 120 }: QRCodeProps) {
           size={size}
           level="M"
           bgColor="transparent"
+          fgColor={color === 'white' ? '#ffffff' : '#000000'}
         />
       </div>
       <div
@@ -41,7 +45,7 @@ export default function QRCode({ show, size = 120 }: QRCodeProps) {
           fontWeight: 600,
           fontSize: 18,
           lineHeight: 1.1,
-          color: '#222',
+          color: color === 'white' ? '#ffffff' : '#000000',
           letterSpacing: 0.5,
           textAlign: 'left',
           pointerEvents: 'none',

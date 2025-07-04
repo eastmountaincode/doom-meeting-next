@@ -112,6 +112,7 @@ export default function AdminParticipants() {
   const [token, setToken] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
+  const [connectionAttempts, setConnectionAttempts] = useState(0)
   const [adminId] = useState(() => `admin-observer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
 
   // Generate admin token
@@ -149,7 +150,18 @@ export default function AdminParticipants() {
 
   const handleConnectionError = (error: Error) => {
     console.error('LiveKit admin connection error:', error)
-    setError(`Connection failed: ${error.message}`)
+    
+    // Don't show error for client-initiated disconnects (they're usually harmless)
+    if (error.message.includes('Client initiated disconnect')) {
+      console.log('Admin client disconnect - this is normal behavior')
+      return
+    }
+    
+    // For other errors, increment attempt counter and show error after multiple failures
+    setConnectionAttempts(prev => prev + 1)
+    if (connectionAttempts >= 2) {
+      setError(`Connection failed: ${error.message}`)
+    }
   }
 
   if (isLoading) {
@@ -201,6 +213,9 @@ export default function AdminParticipants() {
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
       onError={handleConnectionError}
       className="bg-transparent"
+      connectOptions={{
+        autoSubscribe: true,
+      }}
     >
       <ParticipantsList />
     </LiveKitRoom>
