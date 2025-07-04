@@ -13,6 +13,7 @@ import {
 import { Track } from "livekit-client"
 import { useVideoSquares } from '../../../hooks/useVideoSquares'
 import { VideoSquare as VideoSquareType } from '../../../types/videoSquare'
+import QRCode from '../../../components/QRCode'
 
 // Store collision shapes for each participant
 const participantCollisionShapes = new Map<string, Array<{x: number, y: number}>>()
@@ -621,6 +622,7 @@ function VideoSquareDisplay() {
   const [squares, setSquares] = useState<VideoSquareType[]>([])
   const [currentBaseSpeed, setCurrentBaseSpeed] = useState(0.06)
   const [showNameLabels, setShowNameLabels] = useState(true)
+  const [showQrCode, setShowQrCode] = useState(true)
   const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff')
   
   // Listen for admin base speed changes via Pusher
@@ -640,7 +642,7 @@ function VideoSquareDisplay() {
         
         channel = pusher.subscribe('display-channel')
         
-        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; backgroundColor?: string }) => {
+        channel.bind('display-screen-event', (data: { type: string; baseSpeed?: number; showNameLabels?: boolean; showQrCode?: boolean; backgroundColor?: string }) => {
           console.log('Received display event:', data)
           
           if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
@@ -651,6 +653,11 @@ function VideoSquareDisplay() {
           if (data.type === 'TOGGLE_NAME_LABELS' && data.showNameLabels !== undefined) {
             console.log('Updating name labels visibility to:', data.showNameLabels)
             setShowNameLabels(data.showNameLabels)
+          }
+
+          if (data.type === 'TOGGLE_QR_CODE' && data.showQrCode !== undefined) {
+            console.log('Updating QR code visibility to:', data.showQrCode)
+            setShowQrCode(data.showQrCode)
           }
 
           if (data.type === 'SET_BACKGROUND_COLOR' && data.backgroundColor) {
@@ -731,6 +738,9 @@ function VideoSquareDisplay() {
           showNameLabels={showNameLabels}
         />
       </div>
+      
+      {/* QR Code */}
+      <QRCode show={showQrCode} />
     </div>
   )
 }
