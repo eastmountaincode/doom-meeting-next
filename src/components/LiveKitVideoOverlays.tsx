@@ -2,6 +2,7 @@ import React from 'react'
 import { VideoTrack, useRemoteParticipants, TrackReferenceOrPlaceholder } from "@livekit/components-react"
 import { VideoSquare as VideoSquareType } from '../types/videoSquare'
 import { generateParticipantShape, getParticipantDisplayName } from '../lib/participantUtils'
+import { HiVideoCamera } from 'react-icons/hi2'
 
 interface LiveKitVideoOverlaysProps {
   squares: VideoSquareType[]
@@ -29,12 +30,12 @@ export default function LiveKitVideoOverlays({
       }}
     >
       {squares.map(square => {
-        // Find corresponding video track
+        // Find corresponding video track for participants
         const trackRef = participantTracks.find(
           track => track.participant.identity === square.participantId
         )
         
-        // Find participant from remoteParticipants for metadata (more reliable)
+        // Find participant from remoteParticipants for metadata
         const participant = remoteParticipants.find(
           p => p.identity === square.participantId
         )
@@ -67,10 +68,11 @@ export default function LiveKitVideoOverlays({
                   clipPath: generateParticipantShape(square.participantId).clipPath,
                   overflow: 'hidden',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  backgroundColor: trackRef?.publication?.isSubscribed ? 'transparent' : '#000',
+                  backgroundColor: trackRef?.publication ? 'transparent' : '#000',
                 }}
               >
-                {trackRef?.publication?.isSubscribed && (
+                {/* Show video if we have a track reference and publication */}
+                {trackRef?.publication && (
                   <VideoTrack
                     trackRef={trackRef}
                     className={`w-full h-full object-cover ${
@@ -78,20 +80,31 @@ export default function LiveKitVideoOverlays({
                     }`}
                   />
                 )}
+                
+                {/* Fallback content if no video track */}
+                {!trackRef?.publication && (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white">
+                    <div className="text-center">
+                      <HiVideoCamera className="text-4xl mb-2 mx-auto text-gray-400" />
+                      <div className="text-sm font-medium">Waiting for camera...</div>
+                    </div>
+                  </div>
+                )}
               </div>
-              {/* Name label conditionally visible below the blob */}
+              
+              {/* Name label */}
               {showNameLabels && (() => {
                 const displayName = getParticipantDisplayName(participant || {})
                 if (displayName) {
                   return (
                     <div
-                      className="bg-black bg-opacity-80 px-0 py-0 text-white font-medium rounded text-center"
+                      className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium rounded text-center"
                       style={{
                         fontSize: '1.1em',
                         pointerEvents: 'auto',
                         zIndex: 10,
-                        minWidth: '60px',
-                        maxWidth: '120px',
+                        minWidth: '100px',
+                        maxWidth: '350px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',

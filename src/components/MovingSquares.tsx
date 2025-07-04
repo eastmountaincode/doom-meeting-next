@@ -8,13 +8,18 @@ import { polygonsCollide, participantCollisionShapes } from '../lib/collisionUti
 import { generateParticipantShape, generateParticipantColor } from '../lib/participantUtils'
 
 // Simple square component for physics - video will be overlaid via DOM
-function VideoSquare({ square }: { square: VideoSquareType }) {
+function VideoSquare({ square, physicsPositions }: { square: VideoSquareType, physicsPositions: React.MutableRefObject<Map<string, [number, number, number]>> }) {
   const meshRef = useRef<THREE.Mesh>(null)
 
-  // Update position every frame  
+  // Update position every frame using physics position
   useFrame(() => {
     if (meshRef.current) {
-      meshRef.current.position.set(...square.position)
+      const physicsPos = physicsPositions.current.get(square.participantId)
+      if (physicsPos) {
+        meshRef.current.position.set(...physicsPos)
+      } else {
+        meshRef.current.position.set(...square.position)
+      }
     }
   })
 
@@ -52,6 +57,7 @@ export default function MovingSquares({
   } = useVideoSquares()
 
   const squareVelocities = useRef<Map<string, [number, number]>>(new Map())
+  const squarePositions = useRef<Map<string, [number, number, number]>>(new Map())
   const { size, camera, gl } = useThree()
   
   // Get actual participants from LiveKit (more reliable than tracks)
@@ -111,7 +117,7 @@ export default function MovingSquares({
       }
     }
     
-  }, [participantTracks, remoteParticipants, squares, addParticipant, removeParticipant, updateSquareVideo])
+  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo])
 
   // Store previous base speed to detect changes
   const prevBaseSpeed = useRef(baseSpeed)
@@ -173,41 +179,49 @@ export default function MovingSquares({
         squareVelocities.current.set(square.participantId, velocity)
       }
 
-      // Update position
-      square.position[0] += velocity[0]
-      square.position[1] += velocity[1]
+      // Get or initialize physics position
+      let position = squarePositions.current.get(square.participantId)
+      if (!position) {
+        position = [...square.position]
+        squarePositions.current.set(square.participantId, position)
+      }
+
+      // Update physics position (not the React state)
+      position[0] += velocity[0]
+      position[1] += velocity[1]
 
       const halfSize = square.size / 2
       
       // Bounce off walls
-      if (square.position[0] + halfSize > halfWidth) {
-        square.position[0] = halfWidth - halfSize
+      if (position[0] + halfSize > halfWidth) {
+        position[0] = halfWidth - halfSize
         velocity[0] = -Math.abs(velocity[0])
-      } else if (square.position[0] - halfSize < -halfWidth) {
-        square.position[0] = -halfWidth + halfSize
+      } else if (position[0] - halfSize < -halfWidth) {
+        position[0] = -halfWidth + halfSize
         velocity[0] = Math.abs(velocity[0])
       }
       
-      if (square.position[1] + halfSize > halfHeight) {
-        square.position[1] = halfHeight - halfSize
+      if (position[1] + halfSize > halfHeight) {
+        position[1] = halfHeight - halfSize
         velocity[1] = -Math.abs(velocity[1])
-      } else if (square.position[1] - halfSize < -halfHeight) {
-        square.position[1] = -halfHeight + halfSize
+      } else if (position[1] - halfSize < -halfHeight) {
+        position[1] = -halfHeight + halfSize
         velocity[1] = Math.abs(velocity[1])
       }
 
-      // Update stored velocity
+      // Update stored velocity and position
       squareVelocities.current.set(square.participantId, velocity)
+      squarePositions.current.set(square.participantId, position)
       
-      // Update video overlay position for this square
+      // Update video overlay position using physics position
       const videoElement = document.querySelector(`[data-participant-id="${square.participantId}"]`) as HTMLElement
       const canvas = gl.domElement
       if (videoElement && canvas) {
         // Get canvas position on the page
         const canvasRect = canvas.getBoundingClientRect()
         
-        // Convert 3D world coordinates to screen coordinates
-        const vector = new THREE.Vector3(square.position[0], square.position[1], square.position[2])
+        // Convert 3D world coordinates to screen coordinates using physics position
+        const vector = new THREE.Vector3(position[0], position[1], position[2])
         vector.project(camera)
         
         // Convert to screen pixels relative to canvas
@@ -232,6 +246,10 @@ export default function MovingSquares({
         const squareA = squares[i]
         const squareB = squares[j]
         
+        // Get physics positions for collision detection
+        const positionA = squarePositions.current.get(squareA.participantId) || squareA.position
+        const positionB = squarePositions.current.get(squareB.participantId) || squareB.position
+        
         // Get collision shapes for both participants
         const shapeA = participantCollisionShapes.get(squareA.participantId)
         const shapeB = participantCollisionShapes.get(squareB.participantId)
@@ -239,15 +257,15 @@ export default function MovingSquares({
         let collision = false
         
         if (shapeA && shapeB) {
-          // Use actual polygon collision detection
+          // Use actual polygon collision detection with physics positions
           collision = polygonsCollide(
-            shapeA, [squareA.position[0], squareA.position[1]], squareA.size,
-            shapeB, [squareB.position[0], squareB.position[1]], squareB.size
+            shapeA, [positionA[0], positionA[1]], squareA.size,
+            shapeB, [positionB[0], positionB[1]], squareB.size
           )
         } else {
           // Fallback to distance-based collision if shapes not available
-          const dx = squareB.position[0] - squareA.position[0]
-          const dy = squareB.position[1] - squareA.position[1]
+          const dx = positionB[0] - positionA[0]
+          const dy = positionB[1] - positionA[1]
           const distance = Math.sqrt(dx * dx + dy * dy)
           const minDistance = (squareA.size + squareB.size) / 2.2
           collision = distance < minDistance
@@ -255,8 +273,8 @@ export default function MovingSquares({
         
         if (collision) {
           // Collision detected - apply separation and velocity swap
-          const dx = squareB.position[0] - squareA.position[0]
-          const dy = squareB.position[1] - squareA.position[1]
+          const dx = positionB[0] - positionA[0]
+          const dy = positionB[1] - positionA[1]
           const distance = Math.sqrt(dx * dx + dy * dy)
           
           if (distance > 0.001) {
@@ -266,10 +284,10 @@ export default function MovingSquares({
             const separationY = (dy / distance) * separationForce
             
             // Calculate new positions after separation
-            let newX1 = squareA.position[0] - separationX
-            let newY1 = squareA.position[1] - separationY
-            let newX2 = squareB.position[0] + separationX
-            let newY2 = squareB.position[1] + separationY
+            let newX1 = positionA[0] - separationX
+            let newY1 = positionA[1] - separationY
+            let newX2 = positionB[0] + separationX
+            let newY2 = positionB[1] + separationY
             
             // Clamp positions to stay within world bounds
             const size1 = squareA.size
@@ -279,11 +297,9 @@ export default function MovingSquares({
             newX2 = Math.max(-halfWidth + size2/2, Math.min(halfWidth - size2/2, newX2))
             newY2 = Math.max(-halfHeight + size2/2, Math.min(halfHeight - size2/2, newY2))
             
-            // Apply the clamped positions
-            squareA.position[0] = newX1
-            squareA.position[1] = newY1
-            squareB.position[0] = newX2
-            squareB.position[1] = newY2
+            // Apply the clamped positions to physics positions
+            squarePositions.current.set(squareA.participantId, [newX1, newY1, positionA[2]])
+            squarePositions.current.set(squareB.participantId, [newX2, newY2, positionB[2]])
 
             // Collision detected: swap velocities
             const velA = squareVelocities.current.get(squareA.participantId) || [0, 0]
@@ -297,23 +313,27 @@ export default function MovingSquares({
     }
   })
 
-  // Cleanup velocities and collision shapes when squares are removed
+  // Cleanup velocities, positions, and collision shapes when squares are removed
   useEffect(() => {
     const currentIds = new Set(squares.map(s => s.participantId))
     for (const [id] of squareVelocities.current) {
       if (!currentIds.has(id)) {
         squareVelocities.current.delete(id)
+        squarePositions.current.delete(id)
         participantCollisionShapes.delete(id)
       }
     }
-  }, [squares])
+  }, [squares.length]) // Only depend on length, not the full squares array
   
-  // Notify parent component about squares updates
+  // Notify parent component about squares updates (use ref to avoid infinite loops)
+  const onSquaresUpdateRef = useRef(onSquaresUpdate)
+  onSquaresUpdateRef.current = onSquaresUpdate
+  
   useEffect(() => {
-    if (onSquaresUpdate) {
-      onSquaresUpdate(squares)
+    if (onSquaresUpdateRef.current) {
+      onSquaresUpdateRef.current(squares)
     }
-  }, [squares, onSquaresUpdate])
+  }, [squares.length]) // Only depend on length, not the full squares array
 
   return (
     <>
@@ -322,6 +342,7 @@ export default function MovingSquares({
           <VideoSquare 
             key={square.participantId}
             square={square}
+            physicsPositions={squarePositions}
           />
         )
       })}

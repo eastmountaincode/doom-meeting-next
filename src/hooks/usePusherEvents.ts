@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface PusherEventData {
   type: string
@@ -30,6 +30,12 @@ interface PusherEventHandlers {
 
 export function usePusherEvents(handlers: PusherEventHandlers) {
   const [isConnected, setIsConnected] = useState(false)
+  const handlersRef = useRef(handlers)
+
+  // Update handlers ref when handlers change
+  useEffect(() => {
+    handlersRef.current = handlers
+  }, [handlers])
 
   useEffect(() => {
     let pusher: any = null
@@ -49,27 +55,27 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
             console.log('Received display event:', data)
             
             if (data.type === 'SET_BASE_SPEED' && data.baseSpeed !== undefined) {
-              handlers.onSetBaseSpeed?.(data.baseSpeed)
+              handlersRef.current.onSetBaseSpeed?.(data.baseSpeed)
             }
             
             if (data.type === 'TOGGLE_NAME_LABELS' && data.showNameLabels !== undefined) {
-              handlers.onToggleNameLabels?.(data.showNameLabels)
+              handlersRef.current.onToggleNameLabels?.(data.showNameLabels)
             }
             
             if (data.type === 'TOGGLE_QR_CODE' && data.showQrCode !== undefined) {
-              handlers.onToggleQrCode?.(data.showQrCode)
+              handlersRef.current.onToggleQrCode?.(data.showQrCode)
             }
             
             if (data.type === 'SET_QR_CODE_COLOR' && data.qrCodeColor !== undefined) {
-              handlers.onSetQrCodeColor?.(data.qrCodeColor)
+              handlersRef.current.onSetQrCodeColor?.(data.qrCodeColor)
             }
             
             if (data.type === 'SET_BACKGROUND_COLOR' && data.backgroundColor) {
-              handlers.onSetBackgroundColor?.(data.backgroundColor)
+              handlersRef.current.onSetBackgroundColor?.(data.backgroundColor)
             }
             
             if (data.type === 'SET_BACKGROUND_COLOR_TRANSITION' && data.backgroundColor) {
-              handlers.onSetBackgroundColorTransition?.(data.backgroundColor)
+              handlersRef.current.onSetBackgroundColorTransition?.(data.backgroundColor)
             }
             
             if (data.type === 'START_COLOR_CYCLE') {
@@ -79,7 +85,7 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
                 speed: data.speed,
                 startHue: data.startHue
               })
-              handlers.onStartColorCycle?.({
+              handlersRef.current.onStartColorCycle?.({
                 saturation: data.saturation,
                 lightness: data.lightness,
                 speed: data.speed,
@@ -88,22 +94,22 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
             }
             
             if (data.type === 'STOP_COLOR_CYCLE') {
-              handlers.onStopColorCycle?.()
+              handlersRef.current.onStopColorCycle?.()
             }
             
             if (data.type === 'SET_COLOR_CYCLE_SPEED' && data.speed !== undefined) {
               console.log('Display received SET_COLOR_CYCLE_SPEED with:', { speed: data.speed })
-              handlers.onSetColorCycleSpeed?.(data.speed)
+              handlersRef.current.onSetColorCycleSpeed?.(data.speed)
             }
             
             if (data.type === 'SET_DISPLAY_TEXT' && data.text !== undefined) {
               console.log('Display received SET_DISPLAY_TEXT with:', { text: data.text })
-              handlers.onSetDisplayText?.(data.text)
+              handlersRef.current.onSetDisplayText?.(data.text)
             }
             
             if (data.type === 'CLEAR_DISPLAY_TEXT') {
               console.log('Display received CLEAR_DISPLAY_TEXT')
-              handlers.onClearDisplayText?.()
+              handlersRef.current.onClearDisplayText?.()
             }
           })
           
@@ -134,7 +140,7 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
       }
       setIsConnected(false)
     }
-  }, [handlers])
+  }, []) // Empty dependency array - only run once
 
   return { isConnected }
 } 

@@ -48,7 +48,6 @@ function VideoSquareDisplay() {
       colorSystem.startColorTransition(color)
     },
     onStartColorCycle: (data: { saturation?: number, lightness?: number, speed?: number, startHue?: number }) => {
-      console.log('Display received START_COLOR_CYCLE with:', data)
       colorSystem.setColorCycleActive(true)
       if (data.saturation !== undefined) colorSystem.setColorCycleSaturation(data.saturation)
       if (data.lightness !== undefined) colorSystem.setColorCycleLightness(data.lightness)
@@ -66,16 +65,13 @@ function VideoSquareDisplay() {
       colorSystem.sendColorUpdateToAdmin(colorSystem.getCurrentDisplayedColor())
     },
     onSetColorCycleSpeed: (speed: number) => {
-      console.log('Display received SET_COLOR_CYCLE_SPEED with:', { speed })
       colorSystem.setColorCycleSpeed(speed)
     },
     onSetDisplayText: (text: string) => {
-      console.log('Display received SET_DISPLAY_TEXT with:', { text })
       setDisplayText(text)
       setShowText(text.trim().length > 0)
     },
     onClearDisplayText: () => {
-      console.log('Display received CLEAR_DISPLAY_TEXT')
       setDisplayText('')
       setShowText(false)
     },

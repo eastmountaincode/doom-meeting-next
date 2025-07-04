@@ -16,7 +16,8 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
             // Subscribe to square updates
             managerRef.current.on('squares.updated', (event) => {
                 if (event.data && typeof event.data === 'object' && 'squares' in event.data) {
-                    setSquares((event.data as { squares: VideoSquare[] }).squares)
+                    const newSquares = (event.data as { squares: VideoSquare[] }).squares
+                    setSquares(newSquares)
                 }
             })
 
@@ -53,10 +54,6 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
         return managerRef.current?.getSquareCount() || 0
     }, [])
 
-    const updatePhysics = useCallback((deltaTime: number) => {
-        managerRef.current?.updatePhysics(deltaTime)
-    }, [])
-
     const updateWorldBounds = useCallback((width: number, height: number) => {
         managerRef.current?.updateWorldBounds(width, height)
     }, [])
@@ -82,7 +79,6 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
         removeParticipant,
         updateSquareVideo,
         clearAllSquares,
-        updatePhysics,
         updateWorldBounds,
 
         // Events

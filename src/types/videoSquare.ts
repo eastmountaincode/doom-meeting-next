@@ -8,6 +8,14 @@ export interface VideoSquare {
   timestamp: number // When this square was created
 }
 
+export interface PlaceholderStream {
+  id: string
+  name: string
+  url: string
+  enabled: boolean
+  createdAt: number
+}
+
 export interface VideoSquareEvent {
   type: 'squares.updated' | 'square.added' | 'square.removed' | 'physics.updated'
   data?: unknown

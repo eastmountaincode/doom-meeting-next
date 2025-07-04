@@ -10,15 +10,6 @@ export class VideoSquareManager {
     this.config = config
   }
 
-  // Event system
-  on(eventType: string, callback: (event: VideoSquareEvent) => void): void {
-    this.eventBus.on(eventType, callback)
-  }
-
-  off(eventType: string, callback: (event: VideoSquareEvent) => void): void {
-    this.eventBus.off(eventType, callback)
-  }
-
   // Core lifecycle methods
   addParticipant(participantId: string, options?: { color?: string }): VideoSquare | null {
     if (this.squares.has(participantId)) {
@@ -29,7 +20,7 @@ export class VideoSquareManager {
     const position = this.findOptimalPosition()
     const newSize = this.getCurrentSquareSize()
     
-    // Update ALL existing squares to the new size (like webgl-test-4)
+    // Update ALL existing squares to the new size
     this.squares.forEach(square => {
       square.size = newSize
     })
@@ -56,8 +47,8 @@ export class VideoSquareManager {
       const square = this.squares.get(participantId)
       this.squares.delete(participantId)
       
-      // Update ALL remaining squares to the new size (like webgl-test-4)
-      const newSize = this.getSquareSizeForCount(this.squares.size) // Use current count after removal
+      // Update ALL remaining squares to the new size
+      const newSize = this.getSquareSizeForCount(this.squares.size)
       this.squares.forEach(remainingSquare => {
         remainingSquare.size = newSize
       })
@@ -76,12 +67,6 @@ export class VideoSquareManager {
       return true
     }
     return false
-  }
-
-  // Physics update (will be called from animation frame)
-  updatePhysics(deltaTime: number): void {
-    // For now, just emit event - physics logic will be added in Phase 2
-    this.eventBus.emit('physics.updated', { deltaTime, squareCount: this.squares.size })
   }
 
   // Getters
@@ -109,7 +94,16 @@ export class VideoSquareManager {
     this.config.worldHeight = height
   }
 
-  // Smart placement algorithm (simplified for Phase 1)
+  // Event system
+  on(eventType: string, callback: (event: VideoSquareEvent) => void): void {
+    this.eventBus.on(eventType, callback)
+  }
+
+  off(eventType: string, callback: (event: VideoSquareEvent) => void): void {
+    this.eventBus.off(eventType, callback)
+  }
+
+  // Smart placement algorithm
   private findOptimalPosition(): [number, number, number] {
     const existingSquares = Array.from(this.squares.values())
     
@@ -117,7 +111,7 @@ export class VideoSquareManager {
       return [0, 0, 0] // Center for first square
     }
 
-    // Simplified grid-based placement for Phase 1
+    // Simplified grid-based placement
     const gridSize = 20
     let bestPosition: [number, number, number] = [0, 0, 0]
     let bestScore = -Infinity
@@ -156,7 +150,7 @@ export class VideoSquareManager {
   }
 
   private getCurrentSquareSize(): number {
-    return this.getSquareSizeForCount(this.squares.size + 1) // +1 for the square being added
+    return this.getSquareSizeForCount(this.squares.size + 1)
   }
 
   private getSquareSizeForCount(count: number): number {
@@ -174,8 +168,8 @@ export class VideoSquareManager {
 
   private generateRandomVelocity(): [number, number] {
     return [
-      (Math.random() - 0.5) * this.config.baseSpeed * 2,
-      (Math.random() - 0.5) * this.config.baseSpeed * 2
+      (Math.random() - 0.5) * 0.1,
+      (Math.random() - 0.5) * 0.1
     ]
   }
 
@@ -184,7 +178,6 @@ export class VideoSquareManager {
     return colors[Math.floor(Math.random() * colors.length)]
   }
 
-  // Cleanup
   destroy(): void {
     this.squares.clear()
     this.eventBus.removeAllListeners()
