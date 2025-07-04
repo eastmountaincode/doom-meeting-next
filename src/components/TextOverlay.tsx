@@ -23,7 +23,6 @@ const calculateTextLayout = (text: string, maxWidth: number, maxHeight: number):
   // Try to fit text with line breaks before shrinking
   while (fontSize >= minFontSize) {
     ctx.font = `bold ${fontSize}px Arial`
-    const lineHeight = fontSize * 1.3 // Line height with some spacing
     
     // Break text into lines that fit the width
     const words = text.split(' ')
@@ -52,7 +51,7 @@ const calculateTextLayout = (text: string, maxWidth: number, maxHeight: number):
     }
     
     // Check if all lines fit within height
-    const totalHeight = lines.length * lineHeight
+    const totalHeight = lines.length * fontSize * 1.3 // Line height with some spacing
     if (totalHeight <= maxHeight * 0.9 && lines.length <= maxLines) {
       return { fontSize, lines }
     }
@@ -63,7 +62,6 @@ const calculateTextLayout = (text: string, maxWidth: number, maxHeight: number):
   
   // Fallback: use minimum font size with whatever lines we can fit
   ctx.font = `bold ${minFontSize}px Arial`
-  const lineHeight = minFontSize * 1.3
   const words = text.split(' ')
   const lines: string[] = []
   let currentLine = ''

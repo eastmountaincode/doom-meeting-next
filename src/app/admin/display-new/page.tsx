@@ -4,8 +4,7 @@ import { Canvas } from "@react-three/fiber"
 import { useEffect, useState } from "react"
 import { 
     LiveKitRoom, 
-    useTracks,
-    TrackReferenceOrPlaceholder,
+    useTracks
 } from "@livekit/components-react"
 import { Track } from "livekit-client"
 import { VideoSquare as VideoSquareType } from '../../../types/videoSquare'
