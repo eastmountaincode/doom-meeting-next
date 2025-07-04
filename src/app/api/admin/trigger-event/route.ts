@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       })
     } else {
       // Send other events to display channel
-      await pusher.trigger('display-channel', 'display-screen-event', event)
+    await pusher.trigger('display-channel', 'display-screen-event', event)
     }
     
     return Response.json({ 

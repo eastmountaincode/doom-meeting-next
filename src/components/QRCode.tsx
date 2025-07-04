@@ -1,12 +1,13 @@
+import React from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 
 interface QRCodeProps {
   show: boolean
   size?: number
-  color?: 'black' | 'white'
+  color: 'black' | 'white'
 }
 
-export default function QRCode({ show, size = 120, color = 'black' }: QRCodeProps) {
+export default function QRCode({ show, size = 120, color }: QRCodeProps) {
   if (!show) return null
 
   // Always use the main site URL for the QR code

@@ -160,7 +160,7 @@ export default function AdminParticipants() {
     // For other errors, increment attempt counter and show error after multiple failures
     setConnectionAttempts(prev => prev + 1)
     if (connectionAttempts >= 2) {
-      setError(`Connection failed: ${error.message}`)
+    setError(`Connection failed: ${error.message}`)
     }
   }
 
