@@ -105,6 +105,63 @@ export class VideoSquareManager {
     return false
   }
 
+  // Conversion methods
+  convertPlaceholderToParticipant(placeholderId: string, newParticipantId: string): boolean {
+    const square = this.squares.get(placeholderId)
+    if (!square || square.type !== 'placeholder') {
+      return false
+    }
+
+    // Remove the old placeholder
+    this.squares.delete(placeholderId)
+
+    // Create new participant with same properties
+    const newSquare: VideoSquare = {
+      ...square,
+      participantId: newParticipantId,
+      type: 'participant',
+      timestamp: Date.now(),
+      placeholderData: undefined // Remove placeholder data
+    }
+
+    this.squares.set(newParticipantId, newSquare)
+    this.eventBus.emit('square.removed', { square, participantId: placeholderId })
+    this.eventBus.emit('square.added', { square: newSquare })
+    this.eventBus.emit('squares.updated', { squares: Array.from(this.squares.values()) })
+
+    return true
+  }
+
+  convertParticipantToPlaceholder(participantId: string, newPlaceholderId: string): boolean {
+    const square = this.squares.get(participantId)
+    if (!square || square.type !== 'participant') {
+      return false
+    }
+
+    // Remove the old participant
+    this.squares.delete(participantId)
+
+    // Create new placeholder with same properties
+    const newSquare: VideoSquare = {
+      ...square,
+      participantId: newPlaceholderId,
+      type: 'placeholder',
+      timestamp: Date.now(),
+      videoTrack: undefined, // Remove video track
+      placeholderData: {
+        name: '👤',
+        url: ''
+      }
+    }
+
+    this.squares.set(newPlaceholderId, newSquare)
+    this.eventBus.emit('square.removed', { square, participantId })
+    this.eventBus.emit('square.added', { square: newSquare })
+    this.eventBus.emit('squares.updated', { squares: Array.from(this.squares.values()) })
+
+    return true
+  }
+
   // Getters
   getSquares(): VideoSquare[] {
     return Array.from(this.squares.values())
@@ -116,6 +173,19 @@ export class VideoSquareManager {
 
   getSquareCount(): number {
     return this.squares.size
+  }
+
+  getParticipantCount(): number {
+    return Array.from(this.squares.values()).filter(square => square.type === 'participant').length
+  }
+
+  getPlaceholderCount(): number {
+    return Array.from(this.squares.values()).filter(square => square.type === 'placeholder').length
+  }
+
+  getFirstPlaceholder(): VideoSquare | null {
+    const placeholders = Array.from(this.squares.values()).filter(square => square.type === 'placeholder')
+    return placeholders.length > 0 ? placeholders[0] : null
   }
 
   // Clear all squares

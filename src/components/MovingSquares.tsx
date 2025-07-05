@@ -54,6 +54,11 @@ export default function MovingSquares({
     addPlaceholder,
     removeParticipant, 
     updateSquareVideo,
+    convertPlaceholderToParticipant,
+    convertParticipantToPlaceholder,
+    getParticipantCount,
+    getPlaceholderCount,
+    getFirstPlaceholder,
     manager 
   } = useVideoSquares()
 
@@ -113,9 +118,56 @@ export default function MovingSquares({
       const square = squares.find(s => s.participantId === id)
       // Only remove if it's a real participant (not placeholder) and they've left
       if (square && square.type === 'participant' && !liveParticipantIds.has(id)) {
-        removeParticipant(id)
-        // Clean up collision shape
-        participantCollisionShapes.delete(id)
+        // Check if we would have less than 3 total squares after removal
+        const currentTotal = squares.length
+        const wouldHaveLessThanThree = currentTotal - 1 < 3
+        
+        if (wouldHaveLessThanThree) {
+          // Convert participant to placeholder instead of removing
+          // Use proper placeholder ID format to match admin settings (placeholder-1, placeholder-2, etc.)
+          const existingPlaceholderIds = squares
+            .filter(s => s.type === 'placeholder')
+            .map(s => s.participantId)
+          
+          // Find the next available placeholder ID (1, 2, or 3)
+          let nextPlaceholderIndex = 1
+          while (existingPlaceholderIds.includes(`placeholder-${nextPlaceholderIndex}`) && nextPlaceholderIndex <= 3) {
+            nextPlaceholderIndex++
+          }
+          
+          const newPlaceholderId = `placeholder-${nextPlaceholderIndex}`
+          
+          // Preserve current physics position and velocity
+          const currentPosition = squarePositions.current.get(id)
+          const currentVelocity = squareVelocities.current.get(id)
+          
+          // Reuse existing collision shape
+          const existingShape = participantCollisionShapes.get(id)
+          if (existingShape) {
+            // Transfer the collision shape from participant to placeholder
+            participantCollisionShapes.delete(id)
+            participantCollisionShapes.set(newPlaceholderId, existingShape)
+          }
+          
+          convertParticipantToPlaceholder(id, newPlaceholderId)
+          
+          // Restore physics position and velocity after conversion
+          if (currentPosition) {
+            squarePositions.current.set(newPlaceholderId, currentPosition)
+          }
+          if (currentVelocity) {
+            squareVelocities.current.set(newPlaceholderId, currentVelocity)
+          }
+          
+          // Clean up old physics data
+          squarePositions.current.delete(id)
+          squareVelocities.current.delete(id)
+        } else {
+          // Remove participant normally
+          removeParticipant(id)
+          // Clean up collision shape
+          participantCollisionShapes.delete(id)
+        }
       }
     }
 
@@ -126,7 +178,39 @@ export default function MovingSquares({
         // Generate and store collision shape for this participant
         const shapeData = generateParticipantShape(id)
         participantCollisionShapes.set(id, shapeData.collisionVertices)
-        addParticipant(id, { color: generateParticipantColor(id) })
+        
+        // Check if we have placeholders to convert
+        const firstPlaceholder = squares.find(square => square.type === 'placeholder')
+        if (firstPlaceholder) {
+          // Preserve current physics position and velocity
+          const currentPosition = squarePositions.current.get(firstPlaceholder.participantId)
+          const currentVelocity = squareVelocities.current.get(firstPlaceholder.participantId)
+          
+          // Convert placeholder to participant - reuse existing collision shape
+          const existingShape = participantCollisionShapes.get(firstPlaceholder.participantId)
+          if (existingShape) {
+            // Transfer the collision shape from placeholder to participant
+            participantCollisionShapes.delete(firstPlaceholder.participantId)
+            participantCollisionShapes.set(id, existingShape)
+          }
+          
+          convertPlaceholderToParticipant(firstPlaceholder.participantId, id)
+          
+          // Restore physics position and velocity after conversion
+          if (currentPosition) {
+            squarePositions.current.set(id, currentPosition)
+          }
+          if (currentVelocity) {
+            squareVelocities.current.set(id, currentVelocity)
+          }
+          
+          // Clean up old physics data
+          squarePositions.current.delete(firstPlaceholder.participantId)
+          squareVelocities.current.delete(firstPlaceholder.participantId)
+        } else {
+          // No placeholders, add new participant normally
+          addParticipant(id, { color: generateParticipantColor(id) })
+        }
       }
     }
 
@@ -139,7 +223,7 @@ export default function MovingSquares({
       }
     }
     
-  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo])
+  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo, convertPlaceholderToParticipant, convertParticipantToPlaceholder, squares])
 
   // Store previous base speed to detect changes
   const prevBaseSpeed = useRef(baseSpeed)

@@ -58,6 +58,26 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
         return managerRef.current?.getSquareCount() || 0
     }, [])
 
+    const convertPlaceholderToParticipant = useCallback((placeholderId: string, newParticipantId: string) => {
+        return managerRef.current?.convertPlaceholderToParticipant(placeholderId, newParticipantId) || false
+    }, [])
+
+    const convertParticipantToPlaceholder = useCallback((participantId: string, newPlaceholderId: string) => {
+        return managerRef.current?.convertParticipantToPlaceholder(participantId, newPlaceholderId) || false
+    }, [])
+
+    const getParticipantCount = useCallback(() => {
+        return managerRef.current?.getParticipantCount() || 0
+    }, [])
+
+    const getPlaceholderCount = useCallback(() => {
+        return managerRef.current?.getPlaceholderCount() || 0
+    }, [])
+
+    const getFirstPlaceholder = useCallback(() => {
+        return managerRef.current?.getFirstPlaceholder() || null
+    }, [])
+
     const updateWorldBounds = useCallback((width: number, height: number) => {
         managerRef.current?.updateWorldBounds(width, height)
     }, [])
@@ -86,11 +106,18 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
         clearAllSquares,
         updateWorldBounds,
 
+        // Conversion methods
+        convertPlaceholderToParticipant,
+        convertParticipantToPlaceholder,
+
         // Events
         onSquareEvent,
 
         // Utils
         getSquareCount,
+        getParticipantCount,
+        getPlaceholderCount,
+        getFirstPlaceholder,
         manager: managerRef.current
     }
 } 
