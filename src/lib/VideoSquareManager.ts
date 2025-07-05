@@ -42,6 +42,41 @@ export class VideoSquareManager {
     return square
   }
 
+  addPlaceholder(placeholderId: string, options?: { color?: string, emoji?: string }): VideoSquare | null {
+    if (this.squares.has(placeholderId)) {
+      console.warn(`Placeholder ${placeholderId} already exists`)
+      return null
+    }
+
+    const position = this.findOptimalPosition()
+    const newSize = this.getCurrentSquareSize()
+    
+    // Update ALL existing squares to the new size
+    this.squares.forEach(square => {
+      square.size = newSize
+    })
+    
+    const square: VideoSquare = {
+      participantId: placeholderId,
+      position,
+      velocity: this.generateRandomVelocity(),
+      size: newSize,
+      color: options?.color || this.generateRandomColor(),
+      timestamp: Date.now(),
+      type: 'placeholder',
+      placeholderData: {
+        name: options?.emoji || '👤',
+        url: '' // Empty for solid color placeholders
+      }
+    }
+
+    this.squares.set(placeholderId, square)
+    this.eventBus.emit('square.added', { square })
+    this.eventBus.emit('squares.updated', { squares: Array.from(this.squares.values()) })
+
+    return square
+  }
+
   removeParticipant(participantId: string): boolean {
     const existed = this.squares.has(participantId)
     if (existed) {

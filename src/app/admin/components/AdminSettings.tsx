@@ -8,16 +8,23 @@ export default function AdminSettings() {
   const [editingPlaceholders, setEditingPlaceholders] = useState<PlaceholderStream[]>([])
   const [setStreamStatus, setSetStreamStatus] = useState<string | null>(null)
 
-  // Initialize with 5 default placeholders if none exist
+  // Initialize with 3 default placeholders if none exist
   useEffect(() => {
     const saved = localStorage.getItem('placeholderStreams')
+    let savedPlaceholders = []
+    
     if (saved) {
-      const savedPlaceholders = JSON.parse(saved)
-      setPlaceholders(savedPlaceholders)
-      setEditingPlaceholders([...savedPlaceholders])
-    } else {
-      // Create 5 default placeholders
-      const defaultPlaceholders: PlaceholderStream[] = Array.from({ length: 5 }, (_, index) => ({
+      try {
+        savedPlaceholders = JSON.parse(saved)
+      } catch (error) {
+        console.error('Failed to parse saved placeholders:', error)
+        savedPlaceholders = []
+      }
+    }
+    
+    // Always ensure we have exactly 3 placeholders
+    if (savedPlaceholders.length !== 3) {
+      const defaultPlaceholders: PlaceholderStream[] = Array.from({ length: 3 }, (_, index) => ({
         id: `placeholder_${index + 1}`,
         name: 'Stork',
         url: 'https://www.youtube.com/watch?v=hKnuDloDCF8',
@@ -27,6 +34,9 @@ export default function AdminSettings() {
       setPlaceholders(defaultPlaceholders)
       setEditingPlaceholders([...defaultPlaceholders])
       localStorage.setItem('placeholderStreams', JSON.stringify(defaultPlaceholders))
+    } else {
+      setPlaceholders(savedPlaceholders)
+      setEditingPlaceholders([...savedPlaceholders])
     }
   }, [])
 
@@ -77,7 +87,7 @@ export default function AdminSettings() {
       <div className="p-4 bg-gray-700 rounded-lg">
         <h4 className="text-md font-semibold text-white mb-4">Placeholder Video Streams</h4>
         <p className="text-gray-400 text-sm mb-4">
-          These 5 streams will be shown when no users are present. When users join, placeholder streams are replaced with user video feeds.
+          These 3 streams will be shown when no users are present. When users join, placeholder streams are replaced with user video feeds.
         </p>
 
         {/* Status Message */}

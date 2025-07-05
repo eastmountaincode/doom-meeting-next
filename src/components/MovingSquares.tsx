@@ -51,6 +51,7 @@ export default function MovingSquares({
   const { 
     squares, 
     addParticipant, 
+    addPlaceholder,
     removeParticipant, 
     updateSquareVideo,
     manager 
@@ -77,6 +78,25 @@ export default function MovingSquares({
     }
   }, [size, manager])
 
+  // Create initial placeholder squares
+  useEffect(() => {
+    if (manager && squares.length === 0) {
+      // Create 3 initial placeholder squares with collision shapes
+      const placeholders = [
+        { id: 'placeholder-1', color: '#FF6B6B', emoji: '🎯' },
+        { id: 'placeholder-2', color: '#4ECDC4', emoji: '🎪' },
+        { id: 'placeholder-3', color: '#45B7D1', emoji: '🎨' }
+      ]
+      
+      placeholders.forEach(placeholder => {
+        // Generate collision shape for placeholder
+        const shapeData = generateParticipantShape(placeholder.id)
+        participantCollisionShapes.set(placeholder.id, shapeData.collisionVertices)
+        addPlaceholder(placeholder.id, { color: placeholder.color, emoji: placeholder.emoji })
+      })
+    }
+  }, [manager, squares.length, addPlaceholder])
+
   // Sync participants with VideoSquare system using actual participants (not tracks)
   useEffect(() => {
     const currentParticipantIds = new Set(squares.map(s => s.participantId))
@@ -88,9 +108,11 @@ export default function MovingSquares({
         .map(participant => participant.identity)
     )
 
-    // Only remove participants who have actually left the room
+    // Only remove REAL participants who have actually left the room (not placeholders)
     for (const id of currentParticipantIds) {
-      if (!liveParticipantIds.has(id)) {
+      const square = squares.find(s => s.participantId === id)
+      // Only remove if it's a real participant (not placeholder) and they've left
+      if (square && square.type === 'participant' && !liveParticipantIds.has(id)) {
         removeParticipant(id)
         // Clean up collision shape
         participantCollisionShapes.delete(id)

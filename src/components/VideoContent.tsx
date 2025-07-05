@@ -1,14 +1,37 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { VideoTrack, useRemoteParticipants, TrackReferenceOrPlaceholder } from "@livekit/components-react"
 import { VideoSquare as VideoSquareType } from '../types/videoSquare'
 import { generateParticipantShape, getParticipantDisplayName } from '../lib/participantUtils'
 import { HiVideoCamera } from 'react-icons/hi2'
+import { PlaceholderStream } from '../types/videoSquare'
 
 interface VideoContentProps {
   squares: VideoSquareType[]
   participantTracks: TrackReferenceOrPlaceholder[]
   canvasSize: { width: number, height: number }
   showNameLabels: boolean
+}
+
+// Helper function to convert YouTube URL to embed URL
+function getYouTubeEmbedUrl(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    let videoId = ''
+    
+    if (urlObj.hostname.includes('youtube.com')) {
+      videoId = urlObj.searchParams.get('v') || ''
+    } else if (urlObj.hostname.includes('youtu.be')) {
+      videoId = urlObj.pathname.slice(1)
+    }
+    
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&showinfo=0`
+    }
+  } catch (error) {
+    console.error('Invalid YouTube URL:', url)
+  }
+  
+  return ''
 }
 
 // Video content component (renders outside Canvas)
@@ -21,6 +44,37 @@ export default function VideoContent({
   // Get remote participants to access metadata directly
   const remoteParticipants = useRemoteParticipants()
   
+  // State for placeholder streams from admin settings
+  const [placeholderStreams, setPlaceholderStreams] = useState<PlaceholderStream[]>([])
+  
+  // Load placeholder streams from localStorage
+  useEffect(() => {
+    const loadPlaceholderStreams = () => {
+      const saved = localStorage.getItem('placeholderStreams')
+      if (saved) {
+        try {
+          const streams = JSON.parse(saved) as PlaceholderStream[]
+          setPlaceholderStreams(streams)
+        } catch (error) {
+          console.error('Failed to load placeholder streams:', error)
+        }
+      }
+    }
+    
+    loadPlaceholderStreams()
+    
+    // Listen for updates from admin settings
+    const handlePlaceholderUpdate = (event: CustomEvent) => {
+      setPlaceholderStreams(event.detail.placeholders)
+    }
+    
+    window.addEventListener('placeholderStreamsUpdated', handlePlaceholderUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('placeholderStreamsUpdated', handlePlaceholderUpdate as EventListener)
+    }
+  }, [])
+  
   return (
     <div 
       className="absolute inset-0 pointer-events-none"
@@ -31,7 +85,11 @@ export default function VideoContent({
     >
       {squares.map(square => {
         if (square.type === 'placeholder') {
-          // Render placeholder with solid color
+          // Find the corresponding placeholder stream from admin settings
+          const placeholderIndex = parseInt(square.participantId.split('-')[1]) - 1
+          const placeholderStream = placeholderStreams[placeholderIndex]
+          const embedUrl = placeholderStream?.url ? getYouTubeEmbedUrl(placeholderStream.url) : ''
+          
           return (
             <div
               key={square.participantId}
@@ -40,7 +98,7 @@ export default function VideoContent({
               style={{ width: '100%', height: '100%' }}
             >
               <div className="relative flex flex-col items-center w-full h-full">
-                {/* Blob shape with solid color */}
+                {/* Blob shape with video content */}
                 <div
                   style={{
                     width: '100%',
@@ -48,20 +106,36 @@ export default function VideoContent({
                     clipPath: generateParticipantShape(square.participantId).clipPath,
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                    backgroundColor: square.color || '#666', // Use square color or default gray
+                    backgroundColor: square.color || '#666', // Fallback color
                   }}
                 >
-                  {/* Simple placeholder content */}
-                  <div className="w-full h-full flex items-center justify-center text-white">
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">📺</div>
-                      <div className="text-sm font-medium">Placeholder</div>
+                  {/* YouTube video or fallback content */}
+                  {embedUrl ? (
+                    <iframe
+                      src={embedUrl}
+                      className="w-full h-full"
+                      style={{
+                        border: 'none',
+                        width: '160%',
+                        height: '160%',
+                        transform: 'translate(-20%, -20%)',
+                        objectFit: 'cover',
+                      }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen={false}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white">
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">{square.placeholderData?.name || '📺'}</div>
+                        <div className="text-sm font-medium">Placeholder</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Placeholder name label */}
-                {showNameLabels && square.placeholderData?.name && (
+                {showNameLabels && (placeholderStream?.name || square.placeholderData?.name) && (
                   <div
                     className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium rounded text-center"
                     style={{
@@ -76,7 +150,7 @@ export default function VideoContent({
                       marginTop: '-2.5em',
                     }}
                   >
-                    {square.placeholderData.name}
+                    {placeholderStream?.name || square.placeholderData?.name}
                   </div>
                 )}
               </div>
