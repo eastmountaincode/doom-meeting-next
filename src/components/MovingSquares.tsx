@@ -95,7 +95,7 @@ export default function MovingSquares({
         addPlaceholder(placeholder.id, { color: placeholder.color, emoji: placeholder.emoji })
       })
     }
-  }, [manager, squares.length, addPlaceholder])
+  }, [manager, squares, addPlaceholder])
 
   // Sync participants with VideoSquare system using actual participants (not tracks)
   useEffect(() => {
@@ -345,7 +345,7 @@ export default function MovingSquares({
         participantCollisionShapes.delete(id)
       }
     }
-  }, [squares.length]) // Only depend on length, not the full squares array
+  }, [squares])
   
   // Notify parent component about squares updates (use ref to avoid infinite loops)
   const onSquaresUpdateRef = useRef(onSquaresUpdate)
@@ -355,7 +355,7 @@ export default function MovingSquares({
     if (onSquaresUpdateRef.current) {
       onSquaresUpdateRef.current(squares)
     }
-  }, [squares.length]) // Only depend on length, not the full squares array
+  }, [squares])
 
   return (
     <>

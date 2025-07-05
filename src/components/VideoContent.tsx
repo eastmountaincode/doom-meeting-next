@@ -27,7 +27,7 @@ function getYouTubeEmbedUrl(url: string): string {
     if (videoId) {
       return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&showinfo=0`
     }
-  } catch (error) {
+  } catch {
     console.error('Invalid YouTube URL:', url)
   }
   
