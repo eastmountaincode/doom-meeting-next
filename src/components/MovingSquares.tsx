@@ -56,9 +56,6 @@ export default function MovingSquares({
     updateSquareVideo,
     convertPlaceholderToParticipant,
     convertParticipantToPlaceholder,
-    getParticipantCount,
-    getPlaceholderCount,
-    getFirstPlaceholder,
     manager 
   } = useVideoSquares()
 
