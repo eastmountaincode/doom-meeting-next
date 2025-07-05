@@ -42,7 +42,7 @@ export class VideoSquareManager {
     return square
   }
 
-  addPlaceholder(placeholderId: string, options?: { color?: string, emoji?: string }): VideoSquare | null {
+  addPlaceholder(placeholderId: string, options?: { color?: string }): VideoSquare | null {
     if (this.squares.has(placeholderId)) {
       console.warn(`Placeholder ${placeholderId} already exists`)
       return null
@@ -65,7 +65,7 @@ export class VideoSquareManager {
       timestamp: Date.now(),
       type: 'placeholder',
       placeholderData: {
-        name: options?.emoji || '👤',
+        name: '👤',
         url: '' // Empty for solid color placeholders
       }
     }

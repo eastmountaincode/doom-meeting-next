@@ -38,7 +38,7 @@ export function useVideoSquares(config: SquareConfig = VIDEO_SQUARE_CONFIG) {
         return managerRef.current?.addParticipant(participantId, options) || null
     }, [])
 
-    const addPlaceholder = useCallback((placeholderId: string, options?: { color?: string, emoji?: string }) => {
+    const addPlaceholder = useCallback((placeholderId: string, options?: { color?: string }) => {
         return managerRef.current?.addPlaceholder(placeholderId, options) || null
     }, [])
 

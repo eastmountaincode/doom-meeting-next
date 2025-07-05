@@ -83,16 +83,16 @@ export default function MovingSquares({
     if (manager && squares.length === 0) {
       // Create 3 initial placeholder squares with collision shapes
       const placeholders = [
-        { id: 'placeholder-1', color: '#FF6B6B', emoji: '🎯' },
-        { id: 'placeholder-2', color: '#4ECDC4', emoji: '🎪' },
-        { id: 'placeholder-3', color: '#45B7D1', emoji: '🎨' }
+        { id: 'placeholder-1', color: '#FF6B6B' },
+        { id: 'placeholder-2', color: '#4ECDC4' },
+        { id: 'placeholder-3', color: '#45B7D1' }
       ]
       
       placeholders.forEach(placeholder => {
         // Generate collision shape for placeholder
         const shapeData = generateParticipantShape(placeholder.id)
         participantCollisionShapes.set(placeholder.id, shapeData.collisionVertices)
-        addPlaceholder(placeholder.id, { color: placeholder.color, emoji: placeholder.emoji })
+        addPlaceholder(placeholder.id, { color: placeholder.color })
       })
     }
   }, [manager, squares, addPlaceholder])
