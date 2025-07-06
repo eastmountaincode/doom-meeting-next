@@ -184,10 +184,10 @@ function LiveKitCameraView() {
   }
 
   return (
-    <div className="h-full flex flex-col min-h-0 safe-area-inset">
+    <div className="safe-area-height flex flex-col min-h-0">
       {/* Video Feed Area - More flexible sizing */}
-      <div className="flex-1 p-2 sm:p-4 pb-0 flex items-center justify-center min-h-0">
-        <div className="relative w-full max-w-lg aspect-square bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden">
+      <div className="flex-1 p-1 sm:p-2 pb-0 flex items-center justify-center min-h-0">
+        <div className="relative w-full max-w-sm sm:max-w-lg aspect-square bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden">
           {/* Video content */}
           {renderVideoContent()}
           
@@ -199,9 +199,9 @@ function LiveKitCameraView() {
       </div>
 
       {/* Alert Zone - Flexible height instead of fixed */}
-      <div className="px-2 sm:px-4 py-1 sm:py-2 flex items-center justify-center flex-shrink-0">
+      <div className="px-1 sm:px-2 py-1 flex items-center justify-center flex-shrink-0">
         <div className="text-center text-gray-500 w-full">
-          <p className="px-2">
+          <p className="px-1">
             <span className="font-bold text-red-500 text-xs sm:text-sm break-words">
               YOU ARE THE EMPLOYEE OF THE MONTH !!!
             </span>
@@ -210,11 +210,11 @@ function LiveKitCameraView() {
       </div>    
 
       {/* Camera Selection Buttons - Compact on mobile */}
-      <div className="px-2 sm:px-4 pb-2 sm:pb-4 pt-0 flex-shrink-0 space-y-2">
-        <div className="flex gap-2 sm:gap-4 justify-center">
+      <div className="px-1 sm:px-2 pb-1 sm:pb-2 pt-0 flex-shrink-0 space-y-1 sm:space-y-2">
+        <div className="flex gap-1 sm:gap-2 justify-center">
           <button
             onClick={() => handleCameraSwitch('front')}
-            className={`w-full max-w-xs py-2 sm:py-3 px-3 sm:px-4 text-sm sm:text-lg font-bold rounded-lg border-2 cursor-pointer ${
+            className={`w-full max-w-xs py-1.5 sm:py-2 px-2 sm:px-3 text-xs sm:text-sm font-bold rounded-lg border-2 cursor-pointer ${
               selectedCamera === 'front'
                 ? 'bg-blue-500 border-blue-500 text-white'
                 : 'bg-gray-800 border-gray-600 text-white hover:border-blue-500'
@@ -225,7 +225,7 @@ function LiveKitCameraView() {
           
           <button
             onClick={() => handleCameraSwitch('back')}
-            className={`w-full max-w-xs py-2 sm:py-3 px-3 sm:px-4 text-sm sm:text-lg font-bold rounded-lg border-2 cursor-pointer ${
+            className={`w-full max-w-xs py-1.5 sm:py-2 px-2 sm:px-3 text-xs sm:text-sm font-bold rounded-lg border-2 cursor-pointer ${
               selectedCamera === 'back'
                 ? 'bg-blue-500 border-blue-500 text-white'
                 : 'bg-gray-800 border-gray-600 text-white hover:border-blue-500'
@@ -239,7 +239,7 @@ function LiveKitCameraView() {
         <div className="flex justify-end">
           <button
             onClick={handleEndMeeting}
-            className="bg-red-500 text-white px-4 sm:px-6 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-600 cursor-pointer text-sm sm:text-base"
+            className="bg-red-500 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full font-bold hover:bg-red-600 cursor-pointer text-xs sm:text-sm"
           >
             End
           </button>
