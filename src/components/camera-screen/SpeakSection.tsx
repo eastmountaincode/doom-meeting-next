@@ -25,7 +25,7 @@ export default function SpeakSection({ participantId, onSpeak }: SpeakSectionPro
         },
         body: JSON.stringify({
           type: 'SPEAK_MESSAGE',
-          participantId: participantId || screenName, // Use participantId if available, fallback to screenName
+          participantId: participantId,
           message: text,
         }),
       })

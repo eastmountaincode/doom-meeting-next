@@ -9,7 +9,8 @@ import {
   HiPlay, 
   HiArrowPath,
   HiChatBubbleLeftRight,
-  HiPhoto 
+  HiPhoto,
+  HiSparkles
 } from 'react-icons/hi2'
 
 
@@ -88,6 +89,9 @@ export default function AdminEvents() {
   // Image background state
   const [backgroundImage, setBackgroundImage] = useState<string>('')
   const [isDragging, setIsDragging] = useState(false)
+  
+  // Event system state
+  const [activeEvent, setActiveEvent] = useState<string | null>(null)
   
   // YouTube notes state with localStorage persistence
   const [youtubeNotes, setYoutubeNotes] = useState(() => {
@@ -437,6 +441,24 @@ export default function AdminEvents() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleCustomSet()
+    }
+  }
+
+  // Event system functions
+  const startEvent = async (eventType: string) => {
+    if (activeEvent) {
+      // Stop current event first
+      await stopEvent()
+    }
+    
+    setActiveEvent(eventType)
+    await triggerEvent('START_EVENT', { eventType })
+  }
+
+  const stopEvent = async () => {
+    if (activeEvent) {
+      await triggerEvent('STOP_EVENT', { eventType: activeEvent })
+      setActiveEvent(null)
     }
   }
 
@@ -978,45 +1000,63 @@ export default function AdminEvents() {
         </div>
       </div>
       
-      {/* Event Buttons */}
+      {/* Event System */}
       <div className="space-y-4">
         <h4 className="text-md font-semibold text-white">Event Triggers</h4>
         
-        <div className="space-y-2">
-          <button
-            onClick={() => triggerEvent('EMPLOYEE_OF_MONTH', { message: 'Employee of the Month' })}
-            disabled={isTriggering}
-            className="cursor-pointer block w-full text-left p-3 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-          >
-            Employee of the Month
-          </button>
+        <div className="p-4 bg-gray-700 rounded-lg">
+          <div className="flex items-center space-x-3 mb-4">
+            <HiSparkles className="text-lg" />
+            <div>
+              <div className="text-white font-medium">Special Events</div>
+              <div className="text-gray-400 text-sm">Trigger special event displays (only one can be active at a time)</div>
+            </div>
+          </div>
           
-          <button
-            onClick={() => triggerEvent('HIGH_FIVE', { message: 'High Five Challenge' })}
-            disabled={isTriggering}
-            className="cursor-pointer block w-full text-left p-3 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-          >
-            High Five Challenge
-          </button>
+          {activeEvent && (
+            <div className="mb-4 p-3 bg-blue-900/30 border border-blue-500 rounded">
+              <div className="text-blue-300 text-sm font-medium">
+                Active Event: {activeEvent}
+              </div>
+            </div>
+          )}
           
-          <button
-            onClick={() => {
-              const message = prompt('Enter custom message:')
-              if (message) triggerEvent('CUSTOM', { message })
-            }}
-            disabled={isTriggering}
-            className="cursor-pointer block w-full text-left p-3 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-          >
-            Custom Message
-          </button>
-          
-          <button
-            onClick={() => triggerEvent('RESET', { message: 'Display cleared' })}
-            disabled={isTriggering}
-            className="cursor-pointer block w-full text-left p-3 bg-red-700 text-white rounded hover:bg-red-600 disabled:opacity-50"
-          >
-            Clear Display
-          </button>
+          <div className="space-y-3">
+            {/* Big Bang Event */}
+            <div className="flex items-center justify-between p-3 bg-gray-600 rounded-lg">
+              <div>
+                <div className="text-white font-medium">Big Bang</div>
+                <div className="text-gray-300 text-sm">Spotlight a single participant in the center</div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEvent('BIG_BANG')}
+                  disabled={isTriggering || activeEvent === 'BIG_BANG'}
+                  className={`cursor-pointer px-3 py-1 text-sm rounded font-medium transition-colors ${
+                    activeEvent === 'BIG_BANG'
+                      ? 'bg-green-600 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } disabled:opacity-50`}
+                >
+                  {activeEvent === 'BIG_BANG' ? 'Active' : 'Start'}
+                </button>
+                {activeEvent === 'BIG_BANG' && (
+                  <button
+                    onClick={stopEvent}
+                    disabled={isTriggering}
+                    className="cursor-pointer px-3 py-1 text-sm bg-red-600 text-white rounded font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Stop
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Future events can be added here */}
+            <div className="text-center text-gray-400 text-sm py-2">
+              More events coming soon...
+            </div>
+          </div>
         </div>
       </div>
     </div>
