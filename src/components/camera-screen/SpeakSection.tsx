@@ -1,8 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useAtomValue } from 'jotai'
-import { screenNameAtom } from '../../store'
 
 interface SpeakSectionProps {
   participantId?: string // LiveKit participant ID
@@ -12,7 +10,6 @@ interface SpeakSectionProps {
 export default function SpeakSection({ participantId, onSpeak }: SpeakSectionProps) {
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const screenName = useAtomValue(screenNameAtom)
 
   const sendSpeechMessage = async (text: string) => {
     try {
