@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import AdminDashboard from './components/AdminDashboard'
+import { HiLockClosed, HiSparkles } from 'react-icons/hi2'
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -60,7 +61,9 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="bg-gray-800 p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
           <div className="text-center mb-8">
-            <div className="text-4xl mb-4">🔒</div>
+            <div className="text-4xl mb-4">
+              <HiLockClosed className="text-4xl" />
+            </div>
             <h1 className="text-2xl font-bold text-white mb-2">Admin Access</h1>
             <p className="text-gray-400">Enter password to access admin dashboard</p>
           </div>
@@ -102,7 +105,9 @@ export default function AdminPage() {
       <header className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <div className="text-2xl">🎨</div>
+            <div className="text-2xl">
+              <HiSparkles className="text-2xl" />
+            </div>
             <h1 className="text-xl font-bold text-white">DOOM Meeting - Admin Dashboard</h1>
           </div>
           <button

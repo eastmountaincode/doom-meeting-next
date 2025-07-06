@@ -5,6 +5,11 @@ import { useDebugBorders } from '../../../hooks/useDebugBorders'
 import AdminParticipants from './AdminParticipants'
 import AdminEvents from './AdminEvents'
 import AdminSettings from './AdminSettings'
+import { 
+  HiUsers, 
+  HiSparkles, 
+  HiCog6Tooth 
+} from 'react-icons/hi2'
 
 type AdminSection = 'participants' | 'events' | 'settings'
 
@@ -15,9 +20,9 @@ export default function AdminDashboard() {
   useDebugBorders()
 
   const sections = [
-    { id: 'participants' as AdminSection, label: 'Participants', icon: '👥' },
-    { id: 'events' as AdminSection, label: 'Events', icon: '🎯' },
-    { id: 'settings' as AdminSection, label: 'Settings', icon: '⚙️' },
+    { id: 'participants' as AdminSection, label: 'Participants', icon: HiUsers },
+    { id: 'events' as AdminSection, label: 'Events', icon: HiSparkles },
+    { id: 'settings' as AdminSection, label: 'Settings', icon: HiCog6Tooth },
   ]
 
   const renderSection = () => {
@@ -48,7 +53,7 @@ export default function AdminDashboard() {
                   : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
               }`}
             >
-              <span className="text-lg">{section.icon}</span>
+              <section.icon className="text-lg" />
               <span>{section.label}</span>
             </button>
           ))}

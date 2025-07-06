@@ -19,6 +19,8 @@ interface PusherEventData {
   text?: string
   message?: string
   participantId?: string
+  videoId?: string
+  imageId?: string
 }
 
 interface PusherEventHandlers {
@@ -34,6 +36,10 @@ interface PusherEventHandlers {
   onSetDisplayText?: (text: string) => void
   onClearDisplayText?: () => void
   onSpeakMessage?: (data: { message: string, participantId: string }) => void
+  onSetYoutubeBackground?: (videoId: string) => void
+  onClearYoutubeBackground?: () => void
+  onSetImageBackground?: () => void
+  onClearImageBackground?: () => void
 }
 
 export function usePusherEvents(handlers: PusherEventHandlers) {
@@ -124,6 +130,26 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
               if (data.type === 'SPEAK_MESSAGE' && data.message && data.participantId) {
                 console.log('Display received SPEAK_MESSAGE with:', { message: data.message, participantId: data.participantId })
                 handlersRef.current.onSpeakMessage?.({ message: data.message, participantId: data.participantId })
+              }
+              
+              if (data.type === 'SET_YOUTUBE_BACKGROUND' && data.videoId) {
+                console.log('Display received SET_YOUTUBE_BACKGROUND with:', { videoId: data.videoId })
+                handlersRef.current.onSetYoutubeBackground?.(data.videoId)
+              }
+              
+              if (data.type === 'CLEAR_YOUTUBE_BACKGROUND') {
+                console.log('Display received CLEAR_YOUTUBE_BACKGROUND')
+                handlersRef.current.onClearYoutubeBackground?.()
+              }
+              
+              if (data.type === 'SET_IMAGE_BACKGROUND') {
+                console.log('Display received SET_IMAGE_BACKGROUND')
+                handlersRef.current.onSetImageBackground?.()
+              }
+              
+              if (data.type === 'CLEAR_IMAGE_BACKGROUND') {
+                console.log('Display received CLEAR_IMAGE_BACKGROUND')
+                handlersRef.current.onClearImageBackground?.()
               }
             })
           }

@@ -38,6 +38,14 @@ function VideoSquareDisplay() {
     timestamp: number
   }>>([])
   
+  // YouTube background state
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string>('')
+  const [showYoutubeBackground, setShowYoutubeBackground] = useState(false)
+  
+  // Image background state
+  const [backgroundImage, setBackgroundImage] = useState<string>('')
+  const [showImageBackground, setShowImageBackground] = useState(false)
+  
   // Use color system hook
   const colorSystem = useColorSystem()
   
@@ -100,6 +108,37 @@ function VideoSquareDisplay() {
         setSpeechMessages(prev => prev.filter(msg => msg.id !== newMessage.id))
       }, 10000)
     },
+    onSetYoutubeBackground: (videoId: string) => {
+      setYoutubeVideoId(videoId)
+      setShowYoutubeBackground(true)
+      setShowImageBackground(false)
+      // Stop color cycling when YouTube background is active
+      colorSystem.setColorCycleActive(false)
+    },
+    onClearYoutubeBackground: () => {
+      setYoutubeVideoId('')
+      setShowYoutubeBackground(false)
+    },
+    onSetImageBackground: async () => {
+      try {
+        const response = await fetch('/api/admin/image-background')
+        const data = await response.json()
+        
+        if (data.success && data.imageUrl) {
+          setBackgroundImage(data.imageUrl)
+          setShowImageBackground(true)
+          setShowYoutubeBackground(false)
+          // Stop color cycling when image background is active
+          colorSystem.setColorCycleActive(false)
+        }
+      } catch (error) {
+        console.error('Error fetching image background:', error)
+      }
+    },
+    onClearImageBackground: () => {
+      setBackgroundImage('')
+      setShowImageBackground(false)
+    },
   }
   
   // Initialize Pusher events
@@ -127,7 +166,70 @@ function VideoSquareDisplay() {
   const tracksToUse = participantTracks.length > 0 ? participantTracks : allParticipantTracks
   
   return (
-    <div className="h-screen w-screen" style={{ background: colorSystem.backgroundColor }}>
+    <div className="h-screen w-screen" style={{ background: (showYoutubeBackground || showImageBackground) ? 'transparent' : colorSystem.backgroundColor }}>
+      {/* YouTube Background */}
+      {showYoutubeBackground && youtubeVideoId && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: -1,
+            overflow: 'hidden',
+          }}
+        >
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&mute=1&loop=1&playlist=${youtubeVideoId}&controls=0`}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '177.77vh', // 16:9 aspect ratio scaled to viewport height
+              height: '56.25vw', // 16:9 aspect ratio scaled to viewport width
+              minWidth: '100vw',
+              minHeight: '100vh',
+              transform: 'translate(-50%, -50%)',
+              border: 'none',
+              pointerEvents: 'none',
+            }}
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+          />
+        </div>
+      )}
+      
+      {/* Image Background */}
+      {showImageBackground && backgroundImage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: -1,
+            overflow: 'hidden',
+          }}
+        >
+          <img
+            src={backgroundImage}
+            alt="Background"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: '100vw',
+              height: '100vh',
+              objectFit: 'contain',
+              transform: 'translate(-50%, -50%)',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+      )}
+      
       <div 
         style={{ 
           width: canvasSize.width, 
@@ -138,7 +240,11 @@ function VideoSquareDisplay() {
         <Canvas
           orthographic
           camera={{ position: [0, 0, 100] }}
-          style={{ width: "100%", height: "100%", background: colorSystem.backgroundColor }}
+          style={{ 
+            width: "100%", 
+            height: "100%", 
+            background: (showYoutubeBackground || showImageBackground) ? 'transparent' : colorSystem.backgroundColor 
+          }}
         >
           <ResponsiveCamera />
           {/* Just the squares, handles the physics */}

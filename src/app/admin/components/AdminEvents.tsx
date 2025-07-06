@@ -2,6 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { HexColorPicker } from 'react-colorful'
+import { 
+  HiTag, 
+  HiQrCode, 
+  HiPaintBrush, 
+  HiPlay, 
+  HiArrowPath,
+  HiChatBubbleLeftRight,
+  HiPhoto 
+} from 'react-icons/hi2'
 
 
 
@@ -71,6 +80,127 @@ export default function AdminEvents() {
   const [isUpdating, setIsUpdating] = useState(false)
   const lastBaseSpeedSentRef = useRef(0)
   
+  // Background type and YouTube video state
+  const [backgroundType, setBackgroundType] = useState<'color' | 'youtube' | 'image'>('color')
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [youtubeVideoId, setYoutubeVideoId] = useState('')
+  
+  // Image background state
+  const [backgroundImage, setBackgroundImage] = useState<string>('')
+  const [isDragging, setIsDragging] = useState(false)
+  
+  // YouTube notes state with localStorage persistence
+  const [youtubeNotes, setYoutubeNotes] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('youtube-notes') || ''
+    }
+    return ''
+  })
+
+  // Helper to extract video ID from URL
+  function extractYouTubeVideoId(url: string): string | null {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/)
+    return match ? match[1] : null
+  }
+
+  const handleSetYouTube = () => {
+    const id = extractYouTubeVideoId(youtubeUrl)
+    if (id) {
+      setYoutubeVideoId(id)
+      setBackgroundType('youtube')
+      triggerEvent('SET_YOUTUBE_BACKGROUND', { videoId: id })
+    }
+  }
+
+  const handleClearYouTube = () => {
+    setYoutubeVideoId('')
+    setYoutubeUrl('')
+    setBackgroundType('color')
+    triggerEvent('CLEAR_YOUTUBE_BACKGROUND')
+  }
+
+  const handleNotesChange = (value: string) => {
+    setYoutubeNotes(value)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('youtube-notes', value)
+    }
+  }
+
+  const handleClearNotes = () => {
+    if (confirm('Are you sure you want to clear all your YouTube notes?')) {
+      setYoutubeNotes('')
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('youtube-notes')
+      }
+    }
+  }
+
+  const handleImageUpload = async (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const imageUrl = e.target?.result as string
+        setBackgroundImage(imageUrl)
+        setBackgroundType('image')
+        
+        // Store image via API endpoint and send signal to display
+        try {
+          const response = await fetch('/api/admin/image-background', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl }),
+          })
+          
+          if (response.ok) {
+            triggerEvent('SET_IMAGE_BACKGROUND', { imageId: 'stored' })
+          } else {
+            console.error('Failed to store image')
+          }
+        } catch (error) {
+          console.error('Error storing image:', error)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleClearImage = () => {
+    setBackgroundImage('')
+    setBackgroundType('color')
+    triggerEvent('CLEAR_IMAGE_BACKGROUND')
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      handleImageUpload(files[0])
+    }
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleImageUpload(file)
+    }
+  }
+
+
+
   // Listen for display color updates when cycle stops
   useEffect(() => {
     let pusher: { subscribe: (channel: string) => { bind: (event: string, callback: (data: { backgroundColor: string }) => void) => void; unbind_all: () => void }; connection: { bind: (event: string, callback: () => void) => void }; unsubscribe: (channel: string) => void; disconnect: () => void } | null = null
@@ -322,7 +452,7 @@ export default function AdminEvents() {
         <h4 className="text-md font-semibold text-white">Display Settings</h4>
         <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-2">
           <div className="flex items-center space-x-3">
-            <span className="text-lg">🏷️</span>
+            <HiTag className="text-lg" />
             <div>
               <div className="text-white font-medium">Screen Name Labels</div>
               <div className="text-gray-400 text-sm">Show participant names below video feeds</div>
@@ -338,7 +468,7 @@ export default function AdminEvents() {
         </div>
         <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-2">
           <div className="flex items-center space-x-3">
-            <span className="text-lg">📱</span>
+            <HiQrCode className="text-lg" />
             <div>
               <div className="text-white font-medium">QR Code</div>
               <div className="text-gray-400 text-sm">Show QR code in upper left corner for easy access</div>
@@ -365,78 +495,300 @@ export default function AdminEvents() {
             </button>
           </div>
         </div>
-        {/* Background Color Picker & Color Cycle */}
-        <div className="flex flex-row items-center p-4 bg-gray-700 rounded-lg gap-6">
-          {/* Color Picker */}
-          <div className="flex flex-col items-start" style={{ minWidth: 300 }}>
-          <div className="flex items-center space-x-3 mb-4">
-            <span className="text-lg">🎨</span>
-            <div>
-              <div className="text-white font-medium">Background Color</div>
-              <div className="text-gray-400 text-sm">Change the display background in real time</div>
+        <div className="space-y-4 mt-5">
+          {/* Background Type Selection */}
+          <div className="flex items-center justify-between">
+            <h4 className="text-md font-semibold text-white">Background</h4>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  setBackgroundType('color')
+                  triggerEvent('SET_BACKGROUND_COLOR', { backgroundColor })
+                }}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  backgroundType === 'color' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                }`}
+              >
+                Color
+              </button>
+              <button
+                onClick={() => {
+                  setBackgroundType('youtube')
+                  if (youtubeVideoId) triggerEvent('SET_YOUTUBE_BACKGROUND', { videoId: youtubeVideoId })
+                }}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  backgroundType === 'youtube' 
+                    ? 'bg-red-600 text-white' 
+                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                }`}
+              >
+                YouTube
+              </button>
+              <button
+                onClick={async () => {
+                  setBackgroundType('image')
+                  if (backgroundImage) {
+                    // Store current image and trigger event
+                    try {
+                      const response = await fetch('/api/admin/image-background', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ imageUrl: backgroundImage }),
+                      })
+                      
+                      if (response.ok) {
+                        triggerEvent('SET_IMAGE_BACKGROUND', { imageId: 'stored' })
+                      }
+                    } catch (error) {
+                      console.error('Error storing image:', error)
+                    }
+                  }
+                }}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  backgroundType === 'image' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                }`}
+              >
+                Image
+              </button>
             </div>
           </div>
-            <div style={{ position: 'relative', width: 300, height: 300 }}>
-              <HexColorPicker
-                color={backgroundColor}
-                onChange={handleColorChange}
-                onMouseUp={handleColorCommit}
-                onTouchEnd={handleColorCommit}
-                onMouseLeave={handleColorCommit}
-                onTouchCancel={handleColorCommit}
-                style={{ width: 300, height: 300 }}
-                aria-label="Pick background color"
-              />
-              {colorCycleActive && (
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  background: 'rgba(255,255,255,0.6)',
-                  zIndex: 2,
-                  borderRadius: 12,
-                  cursor: 'not-allowed',
-                }} />
+          
+          {/* Color Background Section */}
+          <div className="flex flex-row items-start p-4 bg-gray-700 rounded-lg gap-6">
+            {/* Color Picker */}
+            <div className="flex flex-col items-start" style={{ minWidth: 300, opacity: backgroundType === 'color' ? 1 : 0.5 }}>
+              <div className="flex items-center space-x-3 mb-4">
+                <HiPaintBrush className="text-lg" />
+                <div>
+                  <div className="text-white font-medium">Background Color</div>
+                  <div className="text-gray-400 text-sm">Change the display background in real time</div>
+                </div>
+              </div>
+              <div style={{ position: 'relative', width: 300, height: 300 }}>
+                <HexColorPicker
+                  color={backgroundColor}
+                  onChange={handleColorChange}
+                  onMouseUp={handleColorCommit}
+                  onTouchEnd={handleColorCommit}
+                  onMouseLeave={handleColorCommit}
+                  onTouchCancel={handleColorCommit}
+                  style={{ width: 300, height: 300 }}
+                  aria-label="Pick background color"
+                />
+                {(colorCycleActive || backgroundType !== 'color') && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: colorCycleActive ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.3)',
+                    zIndex: 2,
+                    borderRadius: 12,
+                    cursor: 'not-allowed',
+                  }} />
+                )}
+              </div>
+            </div>
+            {/* Color Controls */}
+            <div className="flex flex-col items-stretch justify-center gap-2" style={{ minWidth: 220, height: 340, opacity: backgroundType === 'color' ? 1 : 0.5 }}>
+              <button
+                onClick={handleReset}
+                className="cursor-pointer px-4 py-2 rounded bg-white text-gray-800 font-semibold shadow hover:bg-gray-100 border border-gray-300 w-full"
+                disabled={isTriggering || backgroundType !== 'color'}
+              >
+                Reset to Black
+              </button>
+              <button
+                onClick={handleToggleColorCycle}
+                className={`cursor-pointer px-4 py-2 rounded font-semibold shadow border w-full ${colorCycleActive ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}
+                disabled={isTriggering || backgroundType !== 'color'}
+                style={{ minHeight: 48 }}
+              >
+                {colorCycleActive ? 'Stop Color Cycle' : 'Start Color Cycle'}
+              </button>
+              {/* Color Cycle Speed Slider */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-white mb-2">
+                  Cycle Speed: {colorCycleSpeed}ms
+                </label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="75"
+                  step="0.1"
+                  value={colorCycleSpeed}
+                  onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  disabled={backgroundType !== 'color'}
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>Fast</span>
+                  <span>Slow</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* YouTube Video Section */}
+          <div className="p-4 bg-gray-700 rounded-lg" style={{ opacity: backgroundType === 'youtube' ? 1 : 0.5 }}>
+            <div className="flex items-center space-x-3 mb-4">
+              <HiPlay className="text-lg" />
+              <div>
+                <div className="text-white font-medium">YouTube Video</div>
+                <div className="text-gray-400 text-sm">Set a YouTube video as the background</div>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 rounded border border-gray-400 bg-gray-800 text-white mb-3"
+                  placeholder="Paste YouTube URL or video ID"
+                  value={youtubeUrl}
+                  onChange={e => setYoutubeUrl(e.target.value)}
+                  disabled={backgroundType !== 'youtube'}
+                />
+                <div className="flex flex-row gap-2">
+                  <button
+                    className={`cursor-pointer px-4 py-2 rounded text-sm font-medium ${youtubeUrl ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-500 text-gray-300'}`}
+                    onClick={handleSetYouTube}
+                    disabled={!youtubeUrl || backgroundType !== 'youtube'}
+                  >
+                    Set Video
+                  </button>
+                  <button
+                    className={`cursor-pointer px-4 py-2 rounded text-sm font-medium ${youtubeVideoId ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-500 text-gray-300'}`}
+                    onClick={handleClearYouTube}
+                    disabled={!youtubeVideoId || backgroundType !== 'youtube'}
+                  >
+                    Clear Video
+                  </button>
+                </div>
+              </div>
+              {/* Video Preview */}
+              {youtubeVideoId && (
+                <div className="flex-shrink-0">
+                  <div style={{ width: 280, height: 158, background: '#111', borderRadius: 8, overflow: 'hidden' }}>
+                    <iframe
+                      width="280"
+                      height="158"
+                      src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                      title="YouTube video preview"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-          {/* Buttons Stacked Vertically */}
-          <div className="flex flex-col items-stretch justify-start gap-2" style={{ minWidth: 220 }}>
-            <button
-              onClick={handleReset}
-              className="cursor-pointer px-4 py-2 rounded bg-white text-gray-800 font-semibold shadow hover:bg-gray-100 border border-gray-300 w-full"
-              disabled={isTriggering}
-            >
-              Reset to Black
-            </button>
-            <button
-              onClick={handleToggleColorCycle}
-              className={`cursor-pointer px-4 py-2 rounded font-semibold shadow border w-full ${colorCycleActive ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}
-              disabled={isTriggering}
-              style={{ minHeight: 48 }}
-            >
-              {colorCycleActive ? 'Stop Color Cycle' : 'Start Color Cycle'}
-            </button>
-            {/* Color Cycle Speed Slider */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-white mb-2">
-                Cycle Speed: {colorCycleSpeed}ms
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="75"
-                step="0.1"
-                value={colorCycleSpeed}
-                onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
-              />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>Fast</span>
-                <span>Slow</span>
+            
+            {/* YouTube Notes Section */}
+            <div className="mt-4 pt-4 border-t border-gray-600">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-white font-medium">YouTube Video Notes</div>
+                </div>
+                <button
+                  onClick={handleClearNotes}
+                  className="cursor-pointer px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded font-medium"
+                  disabled={!youtubeNotes.trim()}
+                >
+                  Clear Notes
+                </button>
               </div>
+              <textarea
+                value={youtubeNotes}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 resize-vertical"
+                rows={12}
+                style={{ minHeight: '200px', maxHeight: '400px' }}
+              />
+            </div>
+          </div>
+          
+          {/* Image Background Section */}
+          <div className="p-4 bg-gray-700 rounded-lg" style={{ opacity: backgroundType === 'image' ? 1 : 0.5 }}>
+            <div className="flex items-center space-x-3 mb-4">
+              <HiPhoto className="text-lg" />
+              <div>
+                <div className="text-white font-medium">Image Background</div>
+                <div className="text-gray-400 text-sm">Drag and drop an image or click to upload</div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1">
+                {/* Drag and Drop Area */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`cursor-pointer border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    isDragging 
+                      ? 'border-blue-400 bg-blue-50/10' 
+                      : 'border-gray-500 hover:border-gray-400'
+                  } ${backgroundType !== 'image' ? 'pointer-events-none' : ''}`}
+                  onClick={() => {
+                    if (backgroundType === 'image') {
+                      document.getElementById('image-upload')?.click()
+                    }
+                  }}
+                >
+                  <div className="text-4xl mb-2">📸</div>
+                  <div className="text-white font-medium mb-1">
+                    {isDragging ? 'Drop image here' : 'Drag image here or click to upload'}
+                  </div>
+                  <div className="text-gray-400 text-sm">
+                    Supports JPG, PNG, GIF formats
+                  </div>
+                </div>
+                
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+                
+                {backgroundImage && (
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      onClick={handleClearImage}
+                      className="cursor-pointer px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded font-medium"
+                      disabled={backgroundType !== 'image'}
+                    >
+                      Clear Image
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Image Preview */}
+              {backgroundImage && (
+                <div className="flex-shrink-0">
+                  <div style={{ width: 280, height: 158, background: '#111', borderRadius: 8, overflow: 'hidden' }}>
+                    <img
+                      src={backgroundImage}
+                      alt="Background preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: 8
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -447,7 +799,7 @@ export default function AdminEvents() {
         <h4 className="text-md font-semibold text-white">Video Square Movement</h4>
         <div className="p-4 bg-gray-700 rounded-lg">
           <div className="flex items-center space-x-3 mb-4">
-            <span className="text-lg">🏃</span>
+            <HiArrowPath className="text-lg" />
             <div>
               <div className="text-white font-medium">Movement Speed</div>
               <div className="text-gray-400 text-sm">Control how fast video squares move around the screen</div>
@@ -595,7 +947,7 @@ export default function AdminEvents() {
         <h4 className="text-md font-semibold text-white">Real-time Text Display</h4>
         <div className="p-4 bg-gray-700 rounded-lg">
           <div className="flex items-center space-x-3 mb-4">
-            <span className="text-lg">📝</span>
+            <HiChatBubbleLeftRight className="text-lg" />
             <div>
               <div className="text-white font-medium">Live Text Overlay</div>
               <div className="text-gray-400 text-sm">Type text to display over the video in real-time</div>
