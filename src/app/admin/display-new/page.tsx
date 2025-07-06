@@ -30,6 +30,14 @@ function VideoSquareDisplay() {
   const [displayText, setDisplayText] = useState('')
   const [showText, setShowText] = useState(false)
   
+  // Speech messages state
+  const [speechMessages, setSpeechMessages] = useState<Array<{
+    id: string
+    participantId: string
+    message: string
+    timestamp: number
+  }>>([])
+  
   // Use color system hook
   const colorSystem = useColorSystem()
   
@@ -73,6 +81,24 @@ function VideoSquareDisplay() {
     onClearDisplayText: () => {
       setDisplayText('')
       setShowText(false)
+    },
+    onSpeakMessage: (data: { message: string, participantId: string }) => {
+      console.log(`💬 ${data.participantId}: "${data.message}"`)
+      
+      // Add message to speech messages array
+      const newMessage = {
+        id: `${data.participantId}-${Date.now()}`,
+        participantId: data.participantId,
+        message: data.message,
+        timestamp: Date.now()
+      }
+      
+      setSpeechMessages(prev => [...prev, newMessage])
+      
+      // Auto-remove message after 5 seconds
+      setTimeout(() => {
+        setSpeechMessages(prev => prev.filter(msg => msg.id !== newMessage.id))
+      }, 10000)
     },
   }
   
@@ -129,6 +155,7 @@ function VideoSquareDisplay() {
           participantTracks={tracksToUse}
           canvasSize={canvasSize}
           showNameLabels={showNameLabels}
+          speechMessages={speechMessages}
         />
         
         {/* Text Overlay */}

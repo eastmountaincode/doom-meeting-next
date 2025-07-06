@@ -10,6 +10,12 @@ interface VideoContentProps {
   participantTracks: TrackReferenceOrPlaceholder[]
   canvasSize: { width: number, height: number }
   showNameLabels: boolean
+  speechMessages: Array<{
+    id: string
+    participantId: string
+    message: string
+    timestamp: number
+  }>
 }
 
 // Helper function to convert YouTube URL to embed URL
@@ -39,7 +45,8 @@ export default function VideoContent({
   squares, 
   participantTracks, 
   canvasSize, 
-  showNameLabels 
+  showNameLabels,
+  speechMessages
 }: VideoContentProps) {
   // Get remote participants to access metadata directly
   const remoteParticipants = useRemoteParticipants()
@@ -241,6 +248,62 @@ export default function VideoContent({
                     )
                   }
                   return null
+                })()}
+                
+                {/* Speech bubble for participant */}
+                {(() => {
+                  // Get the most recent message for this participant
+                  const participantMessages = speechMessages.filter(msg => msg.participantId === square.participantId)
+                  const mostRecentMessage = participantMessages.length > 0 
+                    ? participantMessages.reduce((latest, current) => 
+                        current.timestamp > latest.timestamp ? current : latest
+                      ) 
+                    : null
+                  
+                  return mostRecentMessage ? (
+                    <div
+                      key={mostRecentMessage.id}
+                      className="speech-bubble"
+                      style={{
+                        position: 'absolute',
+                        top: '0%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                        color: '#2c3e50',
+                        padding: '12px 16px',
+                        borderRadius: '18px',
+                        fontSize: '0.85em',
+                        fontWeight: '500',
+                        pointerEvents: 'none',
+                        zIndex: 20,
+                        maxWidth: '240px',
+                        wordWrap: 'break-word',
+                        textAlign: 'center',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',
+                        border: '1px solid rgba(0, 0, 0, 0.05)',
+                        animation: 'speechBubbleIn 0.3s ease-out',
+                        lineHeight: '1.3',
+                      }}
+                    >
+                      {mostRecentMessage.message}
+                      {/* Speech bubble tail */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '0',
+                          height: '0',
+                          borderLeft: '8px solid transparent',
+                          borderRight: '8px solid transparent',
+                          borderTop: '8px solid #ffffff',
+                          filter: 'drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1))',
+                        }}
+                      />
+                    </div>
+                  ) : null
                 })()}
               </div>
             </div>

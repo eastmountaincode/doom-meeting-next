@@ -17,6 +17,8 @@ interface PusherEventData {
   speed?: number
   startHue?: number
   text?: string
+  message?: string
+  participantId?: string
 }
 
 interface PusherEventHandlers {
@@ -31,6 +33,7 @@ interface PusherEventHandlers {
   onSetColorCycleSpeed?: (speed: number) => void
   onSetDisplayText?: (text: string) => void
   onClearDisplayText?: () => void
+  onSpeakMessage?: (data: { message: string, participantId: string }) => void
 }
 
 export function usePusherEvents(handlers: PusherEventHandlers) {
@@ -116,6 +119,11 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
               if (data.type === 'CLEAR_DISPLAY_TEXT') {
                 console.log('Display received CLEAR_DISPLAY_TEXT')
                 handlersRef.current.onClearDisplayText?.()
+              }
+              
+              if (data.type === 'SPEAK_MESSAGE' && data.message && data.participantId) {
+                console.log('Display received SPEAK_MESSAGE with:', { message: data.message, participantId: data.participantId })
+                handlersRef.current.onSpeakMessage?.({ message: data.message, participantId: data.participantId })
               }
             })
           }

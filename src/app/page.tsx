@@ -5,7 +5,7 @@ import { currentScreenAtom } from '../store'
 import { useDebugBorders } from '../hooks/useDebugBorders'
 import { useEffect } from 'react'
 import LandingScreen from '../components/LandingScreen'
-import CameraScreen from '../components/CameraScreen'
+import CameraScreen from '../components/camera-screen'
 
 export default function Home() {
   const currentScreen = useAtomValue(currentScreenAtom)
