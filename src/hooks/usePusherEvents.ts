@@ -21,6 +21,7 @@ interface PusherEventData {
   participantId?: string
   videoId?: string
   imageId?: string
+  eventType?: string
 }
 
 interface PusherEventHandlers {
@@ -40,6 +41,8 @@ interface PusherEventHandlers {
   onClearYoutubeBackground?: () => void
   onSetImageBackground?: () => void
   onClearImageBackground?: () => void
+  onStartEvent?: (eventType: string) => void
+  onStopEvent?: (eventType: string) => void
 }
 
 export function usePusherEvents(handlers: PusherEventHandlers) {
@@ -150,6 +153,16 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
               if (data.type === 'CLEAR_IMAGE_BACKGROUND') {
                 console.log('Display received CLEAR_IMAGE_BACKGROUND')
                 handlersRef.current.onClearImageBackground?.()
+              }
+              
+              if (data.type === 'START_EVENT' && data.eventType) {
+                console.log('Display received START_EVENT with:', { eventType: data.eventType })
+                handlersRef.current.onStartEvent?.(data.eventType)
+              }
+              
+              if (data.type === 'STOP_EVENT' && data.eventType) {
+                console.log('Display received STOP_EVENT with:', { eventType: data.eventType })
+                handlersRef.current.onStopEvent?.(data.eventType)
               }
             })
           }

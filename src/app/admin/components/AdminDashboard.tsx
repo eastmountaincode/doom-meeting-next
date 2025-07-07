@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useDebugBorders } from '../../../hooks/useDebugBorders'
 import AdminParticipants from './AdminParticipants'
-import AdminEvents from './AdminEvents'
+import AdminEvents from './AdminEvents/AdminEvents'
 import AdminSettings from './AdminSettings'
 import { 
   HiUsers, 

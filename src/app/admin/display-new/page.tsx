@@ -16,6 +16,7 @@ import VideoContent from '../../../components/VideoContent'
 import TextOverlay from '../../../components/TextOverlay'
 import ResponsiveCamera from '../../../components/ResponsiveCamera'
 import QRCode from '../../../components/QRCode'
+import QRCodeOverlay from '../../../components/QRCodeOverlay'
 
 // LiveKit integration component with video overlay system
 function VideoSquareDisplay() {
@@ -45,6 +46,10 @@ function VideoSquareDisplay() {
   // Image background state
   const [backgroundImage, setBackgroundImage] = useState<string>('')
   const [showImageBackground, setShowImageBackground] = useState(false)
+  
+  // QR code overlay state
+  const [showQrCodeOverlay, setShowQrCodeOverlay] = useState(false)
+  const [originalQrCodeState, setOriginalQrCodeState] = useState<boolean>(true)
   
   // Use color system hook
   const colorSystem = useColorSystem()
@@ -138,6 +143,22 @@ function VideoSquareDisplay() {
     onClearImageBackground: () => {
       setBackgroundImage('')
       setShowImageBackground(false)
+    },
+    onStartEvent: (eventType: string) => {
+      if (eventType === 'QR_CODE_EVENT') {
+        // Store the current QR code state
+        setOriginalQrCodeState(showQrCode)
+        // Hide the small QR code and show the overlay
+        setShowQrCode(false)
+        setShowQrCodeOverlay(true)
+      }
+    },
+    onStopEvent: (eventType: string) => {
+      if (eventType === 'QR_CODE_EVENT') {
+        // Hide the overlay and restore the original QR code state
+        setShowQrCodeOverlay(false)
+        setShowQrCode(originalQrCodeState)
+      }
     },
   }
   
@@ -268,6 +289,13 @@ function VideoSquareDisplay() {
         <TextOverlay 
           displayText={displayText}
           showText={showText}
+          canvasSize={canvasSize}
+        />
+        
+        {/* QR Code Overlay */}
+        <QRCodeOverlay 
+          show={showQrCodeOverlay}
+          color={qrCodeColor}
           canvasSize={canvasSize}
         />
       </div>
