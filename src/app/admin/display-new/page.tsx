@@ -170,6 +170,12 @@ function VideoSquareDisplay() {
         setEventSpaceType('HIGHLIGHT_LAILA')
         setEventSpaceParticipantId(data?.participantId || RESERVED_SCREEN_NAME)
         setShowEventSpace(true)
+      } else if (eventType === 'SAME_PICTURE_EVENT') {
+        // Show the same picture event in event space
+        setEventSpaceType('SAME_PICTURE_EVENT')
+        setShowEventSpace(true)
+        setOriginalQrCodeState(showQrCode)
+        setShowQrCode(false)
       }
     },
     onStopEvent: (eventType: string) => {
@@ -183,6 +189,11 @@ function VideoSquareDisplay() {
         setShowEventSpace(false)
         setEventSpaceType('')
         setEventSpaceParticipantId('')
+      } else if (eventType === 'SAME_PICTURE_EVENT') {
+        // Hide the same picture event
+        setShowEventSpace(false)
+        setEventSpaceType('')
+        setShowQrCode(originalQrCodeState)
       }
     },
   }

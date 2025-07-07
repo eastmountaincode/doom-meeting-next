@@ -1,6 +1,7 @@
 'use client'
 
 import HighlightLailaEvent from './HighlightLailaEvent'
+import SamePictureEvent from './SamePictureEvent/SamePictureEvent'
 
 interface EventSpaceProps {
   show: boolean
@@ -20,6 +21,13 @@ export default function EventSpace({ show, eventType, participantId, canvasSize 
       return (
         <HighlightLailaEvent
           participantId={participantId}
+          canvasSize={canvasSize}
+        />
+      )
+    
+    case 'SAME_PICTURE_EVENT':
+      return (
+        <SamePictureEvent
           canvasSize={canvasSize}
         />
       )

@@ -396,6 +396,36 @@ export default function AdminEvents() {
               </div>
             </div>
             
+            {/* Same Picture Event */}
+            <div className="flex items-center justify-between p-3 bg-gray-600 rounded-lg">
+              <div>
+                <div className="text-white font-medium">Same Picture</div>
+                <div className="text-gray-300 text-sm">Show the classic corporate &quot;same picture&quot; meme</div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEvent('SAME_PICTURE_EVENT')}
+                  disabled={isTriggering || activeEvent === 'SAME_PICTURE_EVENT'}
+                  className={`cursor-pointer px-3 py-1 text-sm rounded font-medium transition-colors ${
+                    activeEvent === 'SAME_PICTURE_EVENT'
+                      ? 'bg-green-600 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } disabled:opacity-50`}
+                >
+                  {activeEvent === 'SAME_PICTURE_EVENT' ? 'Active' : 'Start'}
+                </button>
+                {activeEvent === 'SAME_PICTURE_EVENT' && (
+                  <button
+                    onClick={stopEvent}
+                    disabled={isTriggering}
+                    className="cursor-pointer px-3 py-1 text-sm bg-red-600 text-white rounded font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Stop
+                  </button>
+                )}
+              </div>
+            </div>
+            
             {/* Future events can be added here */}
             <div className="text-center text-gray-400 text-sm py-2">
               More events coming soon...

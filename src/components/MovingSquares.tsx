@@ -111,7 +111,9 @@ export default function MovingSquares({
 
   // Sync participants with VideoSquare system using actual participants (not tracks)
   useEffect(() => {
-    const currentParticipantIds = new Set(squares.map(s => s.participantId))
+    // Get current squares from the manager instead of from state to avoid stale closure
+    const currentSquares = manager?.getSquares() || []
+    const currentParticipantIds = new Set(currentSquares.map((s: VideoSquareType) => s.participantId))
     
     // Use actual LiveKit participants (they persist during camera switches)
     const liveParticipantIds = new Set(
@@ -120,21 +122,28 @@ export default function MovingSquares({
         .map(participant => participant.identity)
     )
 
+    // Debug logging
+    console.log('=== MovingSquares Debug ===')
+    console.log('Current squares:', currentSquares.map(s => `${s.participantId} (${s.type})`))
+    console.log('Live participants:', Array.from(liveParticipantIds))
+    console.log('Participant count:', currentSquares.filter(s => s.type === 'participant').length)
+    console.log('Placeholder count:', currentSquares.filter(s => s.type === 'placeholder').length)
+
     // Only remove REAL participants who have actually left the room (not placeholders)
     for (const id of currentParticipantIds) {
-      const square = squares.find(s => s.participantId === id)
+      const square = currentSquares.find((s: VideoSquareType) => s.participantId === id)
       // Only remove if it's a real participant (not placeholder) and they've left
       if (square && square.type === 'participant' && !liveParticipantIds.has(id)) {
         // Check if we would have less than 3 total squares after removal
-        const currentTotal = squares.length
+        const currentTotal = currentSquares.length
         const wouldHaveLessThanThree = currentTotal - 1 < 3
         
         if (wouldHaveLessThanThree) {
           // Convert participant to placeholder instead of removing
           // Use proper placeholder ID format to match admin settings (placeholder-1, placeholder-2, etc.)
-          const existingPlaceholderIds = squares
-            .filter(s => s.type === 'placeholder')
-            .map(s => s.participantId)
+          const existingPlaceholderIds = currentSquares
+            .filter((s: VideoSquareType) => s.type === 'placeholder')
+            .map((s: VideoSquareType) => s.participantId)
           
           // Find the next available placeholder ID (1, 2, or 3)
           let nextPlaceholderIndex = 1
@@ -156,6 +165,7 @@ export default function MovingSquares({
             participantCollisionShapes.set(newPlaceholderId, existingShape)
           }
           
+          console.log(`Converting participant ${id} to placeholder ${newPlaceholderId}`)
           convertParticipantToPlaceholder(id, newPlaceholderId)
           
           // Restore physics position and velocity after conversion
@@ -171,6 +181,7 @@ export default function MovingSquares({
           squareVelocities.current.delete(id)
         } else {
           // Remove participant normally
+          console.log(`Removing participant ${id}`)
           removeParticipant(id)
           // Clean up collision shape
           participantCollisionShapes.delete(id)
@@ -182,13 +193,15 @@ export default function MovingSquares({
     for (const participant of remoteParticipants) {
       const id = participant.identity
       if (!id.startsWith('admin') && !id.startsWith('display') && !currentParticipantIds.has(id)) {
+        console.log(`Found new participant: ${id}`)
         // Generate and store collision shape for this participant
         const shapeData = generateParticipantShape(id, useSquareShapes)
         participantCollisionShapes.set(id, shapeData.collisionVertices)
         
         // Check if we have placeholders to convert
-        const firstPlaceholder = squares.find(square => square.type === 'placeholder')
+        const firstPlaceholder = currentSquares.find((square: VideoSquareType) => square.type === 'placeholder')
         if (firstPlaceholder) {
+          console.log(`Converting placeholder ${firstPlaceholder.participantId} to participant ${id}`)
           // Preserve current physics position and velocity
           const currentPosition = squarePositions.current.get(firstPlaceholder.participantId)
           const currentVelocity = squareVelocities.current.get(firstPlaceholder.participantId)
@@ -215,6 +228,7 @@ export default function MovingSquares({
           squarePositions.current.delete(firstPlaceholder.participantId)
           squareVelocities.current.delete(firstPlaceholder.participantId)
         } else {
+          console.log(`No placeholders available, adding new participant ${id}`)
           // No placeholders, add new participant normally
           addParticipant(id, { color: generateParticipantColor(id) })
         }
@@ -230,7 +244,7 @@ export default function MovingSquares({
       }
     }
     
-  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo, convertPlaceholderToParticipant, convertParticipantToPlaceholder, squares, useSquareShapes])
+  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo, convertPlaceholderToParticipant, convertParticipantToPlaceholder, useSquareShapes, manager])
 
   // Store previous base speed to detect changes
   const prevBaseSpeed = useRef(baseSpeed)
