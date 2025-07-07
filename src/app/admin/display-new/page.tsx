@@ -26,6 +26,8 @@ function VideoSquareDisplay() {
   const [showNameLabels, setShowNameLabels] = useState(true)
   const [showQrCode, setShowQrCode] = useState(true)
   const [qrCodeColor, setQrCodeColor] = useState<'black' | 'white'>('white')
+  const [useSquareShapes, setUseSquareShapes] = useState(true)
+  const [invertColors, setInvertColors] = useState(false)
   
   // Text display state
   const [displayText, setDisplayText] = useState('')
@@ -60,6 +62,8 @@ function VideoSquareDisplay() {
     onToggleNameLabels: (show: boolean) => setShowNameLabels(show),
     onToggleQrCode: (show: boolean) => setShowQrCode(show),
     onSetQrCodeColor: (color: 'black' | 'white') => setQrCodeColor(color),
+    onToggleVideoShapes: (useSquareShapes: boolean) => setUseSquareShapes(useSquareShapes),
+    onToggleInvertColors: (invertColors: boolean) => setInvertColors(invertColors),
     onSetBackgroundColor: (color: string) => {
       colorSystem.setBackgroundColor(color)
       colorSystem.setColorCycleActive(false)
@@ -187,7 +191,13 @@ function VideoSquareDisplay() {
   const tracksToUse = participantTracks.length > 0 ? participantTracks : allParticipantTracks
   
   return (
-    <div className="h-screen w-screen" style={{ background: (showYoutubeBackground || showImageBackground) ? 'transparent' : colorSystem.backgroundColor }}>
+    <div 
+      className="h-screen w-screen" 
+      style={{ 
+        background: (showYoutubeBackground || showImageBackground) ? 'transparent' : colorSystem.backgroundColor,
+        filter: invertColors ? 'invert(1)' : 'none'
+      }}
+    >
       {/* YouTube Background */}
       {showYoutubeBackground && youtubeVideoId && (
         <div
@@ -273,6 +283,7 @@ function VideoSquareDisplay() {
             participantTracks={tracksToUse} 
             onSquaresUpdate={setSquares}
             baseSpeed={currentBaseSpeed}
+            useSquareShapes={useSquareShapes}
           />
         </Canvas>
         
@@ -283,6 +294,7 @@ function VideoSquareDisplay() {
           canvasSize={canvasSize}
           showNameLabels={showNameLabels}
           speechMessages={speechMessages}
+          useSquareShapes={useSquareShapes}
         />
         
         {/* Text Overlay */}

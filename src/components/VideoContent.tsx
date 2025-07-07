@@ -16,6 +16,7 @@ interface VideoContentProps {
     message: string
     timestamp: number
   }>
+  useSquareShapes: boolean
 }
 
 // Helper function to convert YouTube URL to embed URL
@@ -46,7 +47,8 @@ export default function VideoContent({
   participantTracks, 
   canvasSize, 
   showNameLabels,
-  speechMessages
+  speechMessages,
+  useSquareShapes
 }: VideoContentProps) {
   // Get remote participants to access metadata directly
   const remoteParticipants = useRemoteParticipants()
@@ -110,7 +112,7 @@ export default function VideoContent({
                   style={{
                     width: '100%',
                     height: '100%',
-                    clipPath: generateParticipantShape(square.participantId).clipPath,
+                    clipPath: generateParticipantShape(square.participantId, useSquareShapes).clipPath,
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                     backgroundColor: square.color || '#666', // Fallback color
@@ -144,8 +146,21 @@ export default function VideoContent({
                 {/* Placeholder name label */}
                 {showNameLabels && (placeholderStream?.name || square.placeholderData?.name) && (
                   <div
-                    className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium rounded text-center"
-                    style={{
+                    className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium text-center"
+                    style={useSquareShapes ? {
+                      // Square shapes: flush in bottom-left corner within clipped area
+                      position: 'absolute',
+                      bottom: '7.8%', // 8% clipPath boundary + 2% padding
+                      left: '7.8%',   // 8% clipPath boundary + 2% padding
+                      fontSize: '0.9em',
+                      pointerEvents: 'auto',
+                      zIndex: 10,
+                      maxWidth: '80%', // Stay within the clipped square area
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    } : {
+                      // Circle shapes: centered below video
                       fontSize: '1.1em',
                       pointerEvents: 'auto',
                       zIndex: 10,
@@ -197,7 +212,7 @@ export default function VideoContent({
                   style={{
                     width: '100%',
                     height: '100%',
-                    clipPath: generateParticipantShape(square.participantId).clipPath,
+                    clipPath: generateParticipantShape(square.participantId, useSquareShapes).clipPath,
                     overflow: 'hidden',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                     backgroundColor: trackRef?.publication ? 'transparent' : '#000',
@@ -230,8 +245,21 @@ export default function VideoContent({
                   if (displayName) {
                     return (
                       <div
-                        className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium rounded text-center"
-                        style={{
+                        className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium  text-center"
+                        style={useSquareShapes ? {
+                          // Square shapes: flush in bottom-left corner within clipped area
+                          position: 'absolute',
+                          bottom: '7.8%', // 8% clipPath boundary + 2% padding
+                          left: '7.8%',   // 8% clipPath boundary + 2% padding
+                          fontSize: '0.9em',
+                          pointerEvents: 'auto',
+                          zIndex: 10,
+                          maxWidth: '80%', // Stay within the clipped square area
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        } : {
+                          // Circle shapes: centered below video
                           fontSize: '1.1em',
                           pointerEvents: 'auto',
                           zIndex: 10,
@@ -266,7 +294,7 @@ export default function VideoContent({
                       className="speech-bubble"
                       style={{
                         position: 'absolute',
-                        top: '0%',
+                        top: '1%',
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -277,7 +305,7 @@ export default function VideoContent({
                         fontWeight: '500',
                         pointerEvents: 'none',
                         zIndex: 20,
-                        maxWidth: '240px',
+                        maxWidth: '280px',
                         wordWrap: 'break-word',
                         textAlign: 'center',
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',

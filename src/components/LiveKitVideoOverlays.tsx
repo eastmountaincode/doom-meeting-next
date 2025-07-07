@@ -9,6 +9,7 @@ interface LiveKitVideoOverlaysProps {
   participantTracks: TrackReferenceOrPlaceholder[]
   canvasSize: { width: number, height: number }
   showNameLabels: boolean
+  useSquareShapes?: boolean
 }
 
 // Video overlays component (renders outside Canvas)
@@ -16,7 +17,8 @@ export default function LiveKitVideoOverlays({
   squares, 
   participantTracks, 
   canvasSize, 
-  showNameLabels 
+  showNameLabels,
+  useSquareShapes = true
 }: LiveKitVideoOverlaysProps) {
   // Get remote participants to access metadata directly
   const remoteParticipants = useRemoteParticipants()
@@ -65,7 +67,7 @@ export default function LiveKitVideoOverlays({
                 style={{
                   width: '100%',
                   height: '100%',
-                  clipPath: generateParticipantShape(square.participantId).clipPath,
+                  clipPath: generateParticipantShape(square.participantId, useSquareShapes).clipPath,
                   overflow: 'hidden',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                   backgroundColor: trackRef?.publication ? 'transparent' : '#000',
@@ -99,7 +101,20 @@ export default function LiveKitVideoOverlays({
                   return (
                     <div
                       className="bg-black bg-opacity-80 px-2 py-1 text-white font-medium rounded text-center"
-                      style={{
+                      style={useSquareShapes ? {
+                        // Square shapes: flush in bottom-left corner within clipped area
+                        position: 'absolute',
+                        bottom: '10%', // 8% clipPath boundary + 2% padding
+                        left: '10%',   // 8% clipPath boundary + 2% padding
+                        fontSize: '0.9em',
+                        pointerEvents: 'auto',
+                        zIndex: 10,
+                        maxWidth: '80%', // Stay within the clipped square area
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      } : {
+                        // Circle shapes: centered below video
                         fontSize: '1.1em',
                         pointerEvents: 'auto',
                         zIndex: 10,

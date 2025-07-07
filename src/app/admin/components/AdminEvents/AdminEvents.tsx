@@ -16,6 +16,8 @@ export default function AdminEvents() {
   const [showNameLabels, setShowNameLabels] = useState(true)
   const [showQrCode, setShowQrCode] = useState(true)
   const [qrCodeColor, setQrCodeColor] = useState<'black' | 'white'>('white')
+  const [useSquareShapes, setUseSquareShapes] = useState(true)
+  const [invertColors, setInvertColors] = useState(false)
   
   // Event system state
   const [activeEvent, setActiveEvent] = useState<string | null>(null)
@@ -103,6 +105,18 @@ export default function AdminEvents() {
     await triggerEvent('SET_QR_CODE_COLOR', { qrCodeColor: newColor })
   }
 
+  const toggleVideoShapes = async () => {
+    const newState = !useSquareShapes
+    setUseSquareShapes(newState)
+    await triggerEvent('TOGGLE_VIDEO_SHAPES', { useSquareShapes: newState })
+  }
+
+  const toggleInvertColors = async () => {
+    const newState = !invertColors
+    setInvertColors(newState)
+    await triggerEvent('TOGGLE_INVERT_COLORS', { invertColors: newState })
+  }
+
   const handleTextChange = (text: string) => {
     setDisplayText(text)
     // Send text in real-time as user types
@@ -184,6 +198,46 @@ export default function AdminEvents() {
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showQrCode ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+        </div>
+        <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-2">
+          <div className="flex items-center space-x-3">
+            <HiSparkles className="text-lg" />
+            <div>
+              <div className="text-white font-medium">Video Shapes</div>
+              <div className="text-gray-400 text-sm">Switch between circle blobs and square shapes (Zoom-like)</div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className={`text-sm font-medium ${!useSquareShapes ? 'text-white' : 'text-gray-400'}`}>
+              Circles
+            </span>
+            <button
+              onClick={toggleVideoShapes}
+              disabled={isTriggering}
+              className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ${useSquareShapes ? 'bg-blue-600' : 'bg-gray-600'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useSquareShapes ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+            <span className={`text-sm font-medium ${useSquareShapes ? 'text-white' : 'text-gray-400'}`}>
+              Squares
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-2">
+          <div className="flex items-center space-x-3">
+            <HiSparkles className="text-lg" />
+            <div>
+              <div className="text-white font-medium">Invert Colors</div>
+              <div className="text-gray-400 text-sm">Toggle inverted color display for a dramatic visual effect</div>
+            </div>
+          </div>
+          <button
+            onClick={toggleInvertColors}
+            disabled={isTriggering}
+            className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ${invertColors ? 'bg-purple-600' : 'bg-gray-600'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${invertColors ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
         </div>
         <div className="space-y-4 mt-5">
           <BackgroundControls triggerEvent={triggerEvent} isTriggering={isTriggering} />

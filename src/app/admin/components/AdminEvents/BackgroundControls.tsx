@@ -24,7 +24,7 @@ export default function BackgroundControls({ triggerEvent, isTriggering }: Backg
                 <div className="flex items-center space-x-2">
                     <button
                         onClick={() => handleBackgroundTypeChange('color')}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        className={`cursor-pointer px-3 py-1 rounded text-sm font-medium transition-colors ${
                             backgroundType === 'color' 
                                 ? 'bg-blue-600 text-white' 
                                 : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
@@ -34,7 +34,7 @@ export default function BackgroundControls({ triggerEvent, isTriggering }: Backg
                     </button>
                     <button
                         onClick={() => handleBackgroundTypeChange('youtube')}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        className={`cursor-pointer px-3 py-1 rounded text-sm font-medium transition-colors ${
                             backgroundType === 'youtube' 
                                 ? 'bg-red-600 text-white' 
                                 : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
@@ -44,7 +44,7 @@ export default function BackgroundControls({ triggerEvent, isTriggering }: Backg
                     </button>
                     <button
                         onClick={() => handleBackgroundTypeChange('image')}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                        className={`cursor-pointer px-3 py-1 rounded text-sm font-medium transition-colors ${
                             backgroundType === 'image' 
                                 ? 'bg-green-600 text-white' 
                                 : 'bg-gray-600 text-gray-300 hover:bg-gray-500'

@@ -121,7 +121,7 @@ export default function ColorPickerControls({ triggerEvent, isTriggering, backgr
                 <button
                     onClick={resetToBlack}
                     disabled={isTriggering || backgroundType !== 'color'}
-                    className="px-4 py-2 rounded bg-white text-gray-800 font-semibold shadow border border-gray-300 w-full disabled:opacity-50"
+                    className="cursor-pointer px-4 py-2 rounded bg-white text-gray-800 font-semibold shadow border border-gray-300 w-full disabled:opacity-50"
                 >
                     Reset to Black
                 </button>
@@ -129,7 +129,7 @@ export default function ColorPickerControls({ triggerEvent, isTriggering, backgr
                 <button
                     onClick={handleToggleColorCycle}
                     disabled={isTriggering || backgroundType !== 'color'}
-                    className={`px-4 py-2 rounded font-semibold shadow border w-full disabled:opacity-50 ${
+                    className={`cursor-pointer px-4 py-2 rounded font-semibold shadow border w-full disabled:opacity-50 ${
                         colorCycleActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'
                     }`}
                 >

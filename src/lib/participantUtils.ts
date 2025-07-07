@@ -1,5 +1,32 @@
+// Generate square shape for Zoom-like appearance
+export function generateSquareShape(participantId: string): {
+  clipPath: string,
+  collisionVertices: Array<{x: number, y: number}>
+} {
+  // Simple square with slightly rounded corners
+  const cssPoints = [
+    '8% 8%',   // top-left
+    '92% 8%',  // top-right
+    '92% 92%', // bottom-right
+    '8% 92%'   // bottom-left
+  ]
+  
+  // Collision vertices for square (normalized -0.5 to 0.5)
+  const collisionVertices = [
+    { x: -0.42, y: -0.42 }, // top-left
+    { x: 0.42, y: -0.42 },  // top-right
+    { x: 0.42, y: 0.42 },   // bottom-right
+    { x: -0.42, y: 0.42 }   // bottom-left
+  ]
+  
+  return {
+    clipPath: `polygon(${cssPoints.join(', ')})`,
+    collisionVertices
+  }
+}
+
 // Generate round/circular shape and return both CSS and collision data
-export function generateParticipantShape(participantId: string): { 
+export function generateCircleShape(participantId: string): { 
   clipPath: string, 
   collisionVertices: Array<{x: number, y: number}> 
 } {
@@ -82,4 +109,16 @@ export function getParticipantDisplayName(participant: { metadata?: string }): s
   
   // Don't show the long unique identifier - return empty string instead
   return ''
+}
+
+// Main function that generates either circle or square shape based on preference
+export function generateParticipantShape(participantId: string, useSquareShape: boolean = false): {
+  clipPath: string,
+  collisionVertices: Array<{x: number, y: number}>
+} {
+  if (useSquareShape) {
+    return generateSquareShape(participantId)
+  } else {
+    return generateCircleShape(participantId)
+  }
 } 

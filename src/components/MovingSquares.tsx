@@ -40,13 +40,15 @@ interface MovingSquaresProps {
   participantTracks: TrackReferenceOrPlaceholder[]
   onSquaresUpdate?: (squares: VideoSquareType[]) => void
   baseSpeed: number
+  useSquareShapes?: boolean
 }
 
 // Main squares component with physics  
 export default function MovingSquares({ 
   participantTracks, 
   onSquaresUpdate, 
-  baseSpeed 
+  baseSpeed,
+  useSquareShapes = true
 }: MovingSquaresProps) {
   const { 
     squares, 
@@ -92,12 +94,20 @@ export default function MovingSquares({
       
       placeholders.forEach(placeholder => {
         // Generate collision shape for placeholder
-        const shapeData = generateParticipantShape(placeholder.id)
+        const shapeData = generateParticipantShape(placeholder.id, useSquareShapes)
         participantCollisionShapes.set(placeholder.id, shapeData.collisionVertices)
         addPlaceholder(placeholder.id, { color: placeholder.color })
       })
     }
-  }, [manager, squares, addPlaceholder])
+  }, [manager, squares, addPlaceholder, useSquareShapes])
+
+  // Regenerate collision shapes when shape preference changes
+  useEffect(() => {
+    squares.forEach(square => {
+      const shapeData = generateParticipantShape(square.participantId, useSquareShapes)
+      participantCollisionShapes.set(square.participantId, shapeData.collisionVertices)
+    })
+  }, [useSquareShapes, squares])
 
   // Sync participants with VideoSquare system using actual participants (not tracks)
   useEffect(() => {
@@ -173,7 +183,7 @@ export default function MovingSquares({
       const id = participant.identity
       if (!id.startsWith('admin') && !id.startsWith('display') && !currentParticipantIds.has(id)) {
         // Generate and store collision shape for this participant
-        const shapeData = generateParticipantShape(id)
+        const shapeData = generateParticipantShape(id, useSquareShapes)
         participantCollisionShapes.set(id, shapeData.collisionVertices)
         
         // Check if we have placeholders to convert
