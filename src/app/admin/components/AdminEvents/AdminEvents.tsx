@@ -370,7 +370,7 @@ export default function AdminEvents() {
             <div className="flex items-center justify-between p-3 bg-gray-600 rounded-lg">
               <div>
                 <div className="text-white font-medium">Highlight Laila</div>
-                <div className="text-gray-300 text-sm">Show Laila's video feed in the center, hide all other participants</div>
+                <div className="text-gray-300 text-sm">Show Laila&apos;s video feed in the center, hide all other participants</div>
               </div>
               <div className="flex gap-2">
                 <button
