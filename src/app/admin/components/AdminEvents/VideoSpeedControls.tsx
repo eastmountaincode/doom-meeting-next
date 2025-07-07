@@ -3,11 +3,6 @@
 import { useState, useRef } from 'react'
 import { HiArrowPath } from 'react-icons/hi2'
 
-interface VideoSpeedControlsProps {
-    triggerEvent: (eventType: string, options?: Record<string, unknown>) => Promise<void>
-    isTriggering: boolean
-}
-
 function speedFromSlider(sliderValue: number) {
     if (sliderValue <= 0.75) {
         return sliderValue / 0.75;
@@ -24,7 +19,7 @@ function sliderFromSpeed(speed: number) {
     }
 }
 
-export default function VideoSpeedControls({ triggerEvent, isTriggering }: VideoSpeedControlsProps) {
+export default function VideoSpeedControls() {
     const [baseSpeed, setBaseSpeed] = useState(0.06)
     const [sliderValue, setSliderValue] = useState(sliderFromSpeed(0.06))
     const [customInput, setCustomInput] = useState('0.06')

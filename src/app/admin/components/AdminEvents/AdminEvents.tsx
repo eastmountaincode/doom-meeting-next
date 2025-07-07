@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   HiTag, 
   HiQrCode, 
@@ -244,7 +244,7 @@ export default function AdminEvents() {
         </div>
       </div>
       
-      <VideoSpeedControls triggerEvent={triggerEvent} isTriggering={isTriggering} />
+                <VideoSpeedControls />
       
       {/* Real-time Text Display */}
       <div className="space-y-4">

@@ -19,8 +19,6 @@ export default function QRCodeOverlay({ show, color, canvasSize }: QRCodeOverlay
   const qrSize = Math.min(canvasSize.width, canvasSize.height) * 0.6 // 60% of smallest dimension
   const qrCodeBoxSize = qrSize + 40 // QR code white/black background (qrSize + 20px padding on each side)
   const containerPadding = 40
-  const textHeight = 80 // Approximate height for text
-  const containerSize = qrCodeBoxSize + (containerPadding * 2) + textHeight
 
   return (
     <div 

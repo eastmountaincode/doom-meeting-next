@@ -64,7 +64,6 @@ export default function BackgroundControls({ triggerEvent, isTriggering }: Backg
 
             <YouTubeBackgroundControls 
                 triggerEvent={triggerEvent} 
-                isTriggering={isTriggering} 
                 backgroundType={backgroundType}
             />
 

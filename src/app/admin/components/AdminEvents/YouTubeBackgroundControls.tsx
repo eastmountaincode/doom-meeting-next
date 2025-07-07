@@ -5,7 +5,6 @@ import { HiPlay } from 'react-icons/hi2'
 
 interface YouTubeBackgroundControlsProps {
     triggerEvent: (eventType: string, options?: Record<string, unknown>) => Promise<void>
-    isTriggering: boolean
     backgroundType?: 'color' | 'youtube' | 'image'
 }
 
@@ -14,7 +13,7 @@ function extractYouTubeVideoId(url: string): string | null {
     return match ? match[1] : null
 }
 
-export default function YouTubeBackgroundControls({ triggerEvent, isTriggering, backgroundType = 'youtube' }: YouTubeBackgroundControlsProps) {
+export default function YouTubeBackgroundControls({ triggerEvent, backgroundType = 'youtube' }: YouTubeBackgroundControlsProps) {
     const [youtubeUrl, setYoutubeUrl] = useState('')
     const [youtubeVideoId, setYoutubeVideoId] = useState('')
     const [youtubeNotes, setYoutubeNotes] = useState('')

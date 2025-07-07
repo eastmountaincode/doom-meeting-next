@@ -230,7 +230,7 @@ export default function MovingSquares({
       }
     }
     
-  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo, convertPlaceholderToParticipant, convertParticipantToPlaceholder, squares])
+  }, [participantTracks, remoteParticipants, addParticipant, removeParticipant, updateSquareVideo, convertPlaceholderToParticipant, convertParticipantToPlaceholder, squares, useSquareShapes])
 
   // Store previous base speed to detect changes
   const prevBaseSpeed = useRef(baseSpeed)

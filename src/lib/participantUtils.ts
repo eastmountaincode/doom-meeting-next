@@ -1,5 +1,5 @@
 // Generate square shape for Zoom-like appearance
-export function generateSquareShape(participantId: string): {
+export function generateSquareShape(): {
   clipPath: string,
   collisionVertices: Array<{x: number, y: number}>
 } {
@@ -117,7 +117,7 @@ export function generateParticipantShape(participantId: string, useSquareShape: 
   collisionVertices: Array<{x: number, y: number}>
 } {
   if (useSquareShape) {
-    return generateSquareShape(participantId)
+    return generateSquareShape()
   } else {
     return generateCircleShape(participantId)
   }
