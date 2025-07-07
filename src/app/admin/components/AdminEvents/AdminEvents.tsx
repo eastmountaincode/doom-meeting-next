@@ -9,6 +9,7 @@ import {
 } from 'react-icons/hi2'
 import BackgroundControls from './BackgroundControls'
 import VideoSpeedControls from './VideoSpeedControls'
+import { RESERVED_SCREEN_NAME } from '../../../../config/constants'
 
 export default function AdminEvents() {
   const [isTriggering, setIsTriggering] = useState(false)
@@ -129,14 +130,14 @@ export default function AdminEvents() {
   }
 
   // Event system functions
-  const startEvent = async (eventType: string) => {
+  const startEvent = async (eventType: string, options: Record<string, unknown> = {}) => {
     if (activeEvent) {
       // Stop current event first
       await stopEvent()
     }
     
     setActiveEvent(eventType)
-    await triggerEvent('START_EVENT', { eventType })
+    await triggerEvent('START_EVENT', { eventType, ...options })
   }
 
   const stopEvent = async () => {
@@ -354,6 +355,36 @@ export default function AdminEvents() {
                   {activeEvent === 'BIG_BANG' ? 'Active' : 'Start'}
                 </button>
                 {activeEvent === 'BIG_BANG' && (
+                  <button
+                    onClick={stopEvent}
+                    disabled={isTriggering}
+                    className="cursor-pointer px-3 py-1 text-sm bg-red-600 text-white rounded font-medium hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Stop
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Highlight Laila Event */}
+            <div className="flex items-center justify-between p-3 bg-gray-600 rounded-lg">
+              <div>
+                <div className="text-white font-medium">Highlight Laila</div>
+                <div className="text-gray-300 text-sm">Show Laila's video feed in the center, hide all other participants</div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEvent('HIGHLIGHT_LAILA', { participantId: RESERVED_SCREEN_NAME })}
+                  disabled={isTriggering || activeEvent === 'HIGHLIGHT_LAILA'}
+                  className={`cursor-pointer px-3 py-1 text-sm rounded font-medium transition-colors ${
+                    activeEvent === 'HIGHLIGHT_LAILA'
+                      ? 'bg-green-600 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } disabled:opacity-50`}
+                >
+                  {activeEvent === 'HIGHLIGHT_LAILA' ? 'Active' : 'Start'}
+                </button>
+                {activeEvent === 'HIGHLIGHT_LAILA' && (
                   <button
                     onClick={stopEvent}
                     disabled={isTriggering}

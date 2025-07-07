@@ -21,4 +21,10 @@ export const VIDEO_CONSTRAINTS = {
 }
 
 // Camera switching delay for proper cleanup (in milliseconds)
-export const CAMERA_SWITCH_DELAY = 400 
+export const CAMERA_SWITCH_DELAY = 400
+
+// Reserved screen name that cannot be chosen by regular users
+export const RESERVED_SCREEN_NAME = 'Laila'
+
+// Password for the reserved screen name (from environment variable)
+export const RESERVED_SCREEN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD 

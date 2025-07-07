@@ -4,20 +4,69 @@ import { useState } from 'react'
 import { useSetAtom } from 'jotai'
 import { joinMeetingAtom } from '../store'
 import Image from 'next/image'
+import { RESERVED_SCREEN_NAME, RESERVED_SCREEN_PASSWORD } from '../config/constants'
 
 function LandingScreen() {
   const [screenName, setScreenName] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [showPasswordField, setShowPasswordField] = useState(false)
   const joinMeeting = useSetAtom(joinMeetingAtom)
 
   const handleJoinMeeting = () => {
-    if (screenName.trim()) {
-      joinMeeting(screenName.trim())
+    const trimmedName = screenName.trim()
+    if (trimmedName) {
+      // Check if the screen name is reserved
+      if (trimmedName.toLowerCase() === RESERVED_SCREEN_NAME.toLowerCase()) {
+        if (!showPasswordField) {
+          // Show password field for reserved name
+          setShowPasswordField(true)
+          setError('')
+          return
+        } else {
+          // Validate password
+          if (!RESERVED_SCREEN_PASSWORD) {
+            setError('Reserved screen name authentication is not configured.')
+            return
+          }
+          if (password !== RESERVED_SCREEN_PASSWORD) {
+            setError('Incorrect password for reserved screen name.')
+            return
+          }
+        }
+      }
+      setError('')
+      joinMeeting(trimmedName)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleJoinMeeting()
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setScreenName(newValue)
+    
+    // Hide password field if user changes away from reserved name
+    if (showPasswordField && newValue.toLowerCase() !== RESERVED_SCREEN_NAME.toLowerCase()) {
+      setShowPasswordField(false)
+      setPassword('')
+    }
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError('')
+    }
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value)
+    // Clear error when user starts typing password
+    if (error) {
+      setError('')
     }
   }
 
@@ -42,11 +91,39 @@ function LandingScreen() {
           <input
             type="text"
             value={screenName}
-            onChange={(e) => setScreenName(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            className="w-full p-4 text-lg border-2 border-gray-600 rounded-lg bg-gray-800 text-white mb-8 focus:outline-none focus:border-blue-500 placeholder-gray-400 caret-white"
+            className={`w-full p-4 text-lg border-2 rounded-lg bg-gray-800 text-white mb-2 focus:outline-none placeholder-gray-400 caret-white ${
+              error ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'
+            }`}
             placeholder="Our screen name"
           />
+          
+          {showPasswordField && (
+            <div className="mb-2">
+              <input
+                type="password"
+                value={password}
+                onChange={handlePasswordChange}
+                onKeyDown={handleKeyDown}
+                className={`w-full p-4 text-lg border-2 rounded-lg bg-gray-800 text-white focus:outline-none placeholder-gray-400 caret-white ${
+                  error ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'
+                }`}
+                placeholder="Enter password for reserved name"
+              />
+              <div className="text-gray-400 text-sm mt-2 text-center">
+                This is a reserved screen name. Please enter the password to continue.
+              </div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="text-red-400 text-sm mb-6 text-center">
+              {error}
+            </div>
+          )}
+          
+          <div className="mb-8" />
 
           <button 
             onClick={handleJoinMeeting}

@@ -17,6 +17,8 @@ import TextOverlay from '../../../components/TextOverlay'
 import ResponsiveCamera from '../../../components/ResponsiveCamera'
 import QRCode from '../../../components/QRCode'
 import QRCodeOverlay from '../../../components/QRCodeOverlay'
+import EventSpace from '../../../components/EventSpace/EventSpace'
+import { RESERVED_SCREEN_NAME } from '../../../config/constants'
 
 // LiveKit integration component with video overlay system
 function VideoSquareDisplay() {
@@ -52,6 +54,12 @@ function VideoSquareDisplay() {
   // QR code overlay state
   const [showQrCodeOverlay, setShowQrCodeOverlay] = useState(false)
   const [originalQrCodeState, setOriginalQrCodeState] = useState<boolean>(true)
+  const [originalQrCodeStateForHighlight, setOriginalQrCodeStateForHighlight] = useState<boolean>(true)
+  
+  // Event space state
+  const [showEventSpace, setShowEventSpace] = useState(false)
+  const [eventSpaceType, setEventSpaceType] = useState<string>('')
+  const [eventSpaceParticipantId, setEventSpaceParticipantId] = useState<string>('')
   
   // Use color system hook
   const colorSystem = useColorSystem()
@@ -148,13 +156,20 @@ function VideoSquareDisplay() {
       setBackgroundImage('')
       setShowImageBackground(false)
     },
-    onStartEvent: (eventType: string) => {
+    onStartEvent: (eventType: string, data?: { participantId?: string }) => {
       if (eventType === 'QR_CODE_EVENT') {
         // Store the current QR code state
         setOriginalQrCodeState(showQrCode)
         // Hide the small QR code and show the overlay
         setShowQrCode(false)
         setShowQrCodeOverlay(true)
+      } else if (eventType === 'HIGHLIGHT_LAILA') {
+        // Store the current QR code state and hide it
+        setOriginalQrCodeStateForHighlight(showQrCode)
+        setShowQrCode(false)
+        setEventSpaceType('HIGHLIGHT_LAILA')
+        setEventSpaceParticipantId(data?.participantId || RESERVED_SCREEN_NAME)
+        setShowEventSpace(true)
       }
     },
     onStopEvent: (eventType: string) => {
@@ -162,6 +177,12 @@ function VideoSquareDisplay() {
         // Hide the overlay and restore the original QR code state
         setShowQrCodeOverlay(false)
         setShowQrCode(originalQrCodeState)
+      } else if (eventType === 'HIGHLIGHT_LAILA') {
+        // Restore the original QR code state
+        setShowQrCode(originalQrCodeStateForHighlight)
+        setShowEventSpace(false)
+        setEventSpaceType('')
+        setEventSpaceParticipantId('')
       }
     },
   }
@@ -278,23 +299,35 @@ function VideoSquareDisplay() {
           }}
         >
           <ResponsiveCamera />
-          {/* Just the squares, handles the physics */}
-          <MovingSquares 
-            participantTracks={tracksToUse} 
-            onSquaresUpdate={setSquares}
-            baseSpeed={currentBaseSpeed}
-            useSquareShapes={useSquareShapes}
-          />
+          {/* Just the squares, handles the physics - hide during event space */}
+          {!showEventSpace && (
+            <MovingSquares 
+              participantTracks={tracksToUse} 
+              onSquaresUpdate={setSquares}
+              baseSpeed={currentBaseSpeed}
+              useSquareShapes={useSquareShapes}
+            />
+          )}
         </Canvas>
         
-        {/* Video content - handles both participant videos and placeholders */}
-        <VideoContent 
-          squares={squares}
-          participantTracks={tracksToUse}
+        {/* Video content - handles both participant videos and placeholders - hide during event space */}
+        {!showEventSpace && (
+          <VideoContent 
+            squares={squares}
+            participantTracks={tracksToUse}
+            canvasSize={canvasSize}
+            showNameLabels={showNameLabels}
+            speechMessages={speechMessages}
+            useSquareShapes={useSquareShapes}
+          />
+        )}
+        
+        {/* Event Space - shows special events like highlighting participants */}
+        <EventSpace 
+          show={showEventSpace}
+          eventType={eventSpaceType}
+          participantId={eventSpaceParticipantId}
           canvasSize={canvasSize}
-          showNameLabels={showNameLabels}
-          speechMessages={speechMessages}
-          useSquareShapes={useSquareShapes}
         />
         
         {/* Text Overlay */}
