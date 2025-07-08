@@ -5,7 +5,6 @@ import { Track } from "livekit-client"
 import { useMemo } from "react"
 import LeftPaperVideoFeed from "./LeftPaperVideoFeed"
 import RightPaperVideoFeed from "./RightPaperVideoFeed"
-import BottomPaperVideoFeed from "./BottomPaperVideoFeed"
 
 interface SamePictureEventProps {
     canvasSize: { width: number; height: number }
@@ -37,7 +36,7 @@ export default function SamePictureEvent({ canvasSize }: SamePictureEventProps) 
         [tracks]
     )
 
-    // Select three random participants using useMemo to avoid infinite loops
+    // Select two random participants using useMemo to avoid infinite loops
     const selectedParticipants = useMemo(() => {
         if (tracks.length > 0) {
             const availableParticipants = tracks
@@ -48,16 +47,13 @@ export default function SamePictureEvent({ canvasSize }: SamePictureEventProps) 
                 )
                 .map(track => track.participant.identity)
 
-            if (availableParticipants.length >= 3) {
-                // Shuffle and take first 3
+            if (availableParticipants.length >= 2) {
+                // Shuffle and take first 2
                 const shuffled = [...availableParticipants].sort(() => Math.random() - 0.5)
-                return shuffled.slice(0, 3)
-            } else if (availableParticipants.length === 2) {
-                // If only two participants, use them for first two slots, repeat first for third
-                return [availableParticipants[0], availableParticipants[1], availableParticipants[0]]
+                return shuffled.slice(0, 2)
             } else if (availableParticipants.length === 1) {
-                // If only one participant, use them for all three slots
-                return [availableParticipants[0], availableParticipants[0], availableParticipants[0]]
+                // If only one participant, use them twice
+                return [availableParticipants[0], availableParticipants[0]]
             }
         }
         return []
@@ -97,7 +93,6 @@ export default function SamePictureEvent({ canvasSize }: SamePictureEventProps) 
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        
                         pointerEvents: 'none',
                         zIndex: 1,
                     }}
@@ -113,17 +108,11 @@ export default function SamePictureEvent({ canvasSize }: SamePictureEventProps) 
                         tracks={tracks}
                         remoteParticipants={remoteParticipants}
                     />
-
-                    <BottomPaperVideoFeed 
-                        participantId={selectedParticipants[2]} 
-                        tracks={tracks}
-                        remoteParticipants={remoteParticipants}
-                    />
                 </div>
 
                 {/* Image on top for visibility */}
                 <img
-                    src="/images/corporate_same_picture_3.png"
+                    src="/images/corporate_same_picture.png"
                     alt="Corporate Same Picture"
                     style={{
                         maxWidth: maxWidth,
