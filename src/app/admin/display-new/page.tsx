@@ -180,6 +180,12 @@ function VideoSquareDisplay() {
         setShowEventSpace(true)
         setOriginalQrCodeState(showQrCode)
         setShowQrCode(false)
+      } else if (eventType === 'EVOLUTION_OF_UNIVERSE') {
+        // Show the evolution of universe event in event space
+        setEventSpaceType('EVOLUTION_OF_UNIVERSE')
+        setShowEventSpace(true)
+        setOriginalQrCodeState(showQrCode)
+        setShowQrCode(false)
       }
     },
     onStopEvent: (eventType: string) => {
@@ -195,6 +201,11 @@ function VideoSquareDisplay() {
         setEventSpaceParticipantId('')
       } else if (eventType === 'SAME_PICTURE_EVENT') {
         // Hide the same picture event
+        setShowEventSpace(false)
+        setEventSpaceType('')
+        setShowQrCode(originalQrCodeState)
+      } else if (eventType === 'EVOLUTION_OF_UNIVERSE') {
+        // Hide the evolution of universe event
         setShowEventSpace(false)
         setEventSpaceType('')
         setShowQrCode(originalQrCodeState)

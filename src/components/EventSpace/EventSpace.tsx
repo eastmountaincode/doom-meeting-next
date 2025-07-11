@@ -2,6 +2,7 @@
 
 import HighlightLailaEvent from './HighlightLailaEvent'
 import SamePictureEvent from './SamePictureEvent/SamePictureEvent'
+import EvolutionOfUniverseEvent from './EvolutionOfUniverseEvent'
 
 interface EventSpaceProps {
   show: boolean
@@ -28,6 +29,13 @@ export default function EventSpace({ show, eventType, participantId, canvasSize 
     case 'SAME_PICTURE_EVENT':
       return (
         <SamePictureEvent
+          canvasSize={canvasSize}
+        />
+      )
+    
+    case 'EVOLUTION_OF_UNIVERSE':
+      return (
+        <EvolutionOfUniverseEvent
           canvasSize={canvasSize}
         />
       )
