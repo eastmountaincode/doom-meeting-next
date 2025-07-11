@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Custom Webdings Font */
+@font-face {
+  font-family: 'Webdings';
+  src: url('/fonts/Webdings-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

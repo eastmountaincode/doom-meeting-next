@@ -34,6 +34,7 @@ function VideoSquareDisplay() {
   // Text display state
   const [displayText, setDisplayText] = useState('')
   const [showText, setShowText] = useState(false)
+  const [textFont, setTextFont] = useState('Arial, sans-serif')
   
   // Speech messages state
   const [speechMessages, setSpeechMessages] = useState<Array<{
@@ -106,6 +107,9 @@ function VideoSquareDisplay() {
     onClearDisplayText: () => {
       setDisplayText('')
       setShowText(false)
+    },
+    onSetTextFont: (fontFamily: string) => {
+      setTextFont(fontFamily)
     },
     onSpeakMessage: (data: { message: string, participantId: string }) => {
       console.log(`💬 ${data.participantId}: "${data.message}"`)
@@ -346,6 +350,7 @@ function VideoSquareDisplay() {
           displayText={displayText}
           showText={showText}
           canvasSize={canvasSize}
+          fontFamily={textFont}
         />
         
         {/* QR Code Overlay */}

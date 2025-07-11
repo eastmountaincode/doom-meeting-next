@@ -24,6 +24,7 @@ interface PusherEventData {
   videoId?: string
   imageId?: string
   eventType?: string
+  fontFamily?: string
 }
 
 interface PusherEventHandlers {
@@ -40,6 +41,7 @@ interface PusherEventHandlers {
   onSetColorCycleSpeed?: (speed: number) => void
   onSetDisplayText?: (text: string) => void
   onClearDisplayText?: () => void
+  onSetTextFont?: (fontFamily: string) => void
   onSpeakMessage?: (data: { message: string, participantId: string }) => void
   onSetYoutubeBackground?: (videoId: string) => void
   onClearYoutubeBackground?: () => void
@@ -140,6 +142,11 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
               if (data.type === 'CLEAR_DISPLAY_TEXT') {
                 console.log('Display received CLEAR_DISPLAY_TEXT')
                 handlersRef.current.onClearDisplayText?.()
+              }
+              
+              if (data.type === 'SET_TEXT_FONT' && data.fontFamily) {
+                console.log('Display received SET_TEXT_FONT with:', { fontFamily: data.fontFamily })
+                handlersRef.current.onSetTextFont?.(data.fontFamily)
               }
               
               if (data.type === 'SPEAK_MESSAGE' && data.message && data.participantId) {
