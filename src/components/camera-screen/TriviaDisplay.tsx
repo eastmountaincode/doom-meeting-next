@@ -1,7 +1,7 @@
 'use client'
 
 import { VideoTrack, type TrackReference } from '@livekit/components-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface TriviaDisplayProps {
     question: string
