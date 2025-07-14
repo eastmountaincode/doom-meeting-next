@@ -10,7 +10,6 @@ import BackgroundControls from './BackgroundControls'
 import VideoSpeedControls from './VideoSpeedControls'
 import LiveTextOverlay from './LiveTextOverlay'
 import SpecialEvents from './SpecialEvents'
-import { RESERVED_SCREEN_NAME } from '../../../../config/constants'
 
 export default function AdminEvents() {
     const [isTriggering, setIsTriggering] = useState(false)

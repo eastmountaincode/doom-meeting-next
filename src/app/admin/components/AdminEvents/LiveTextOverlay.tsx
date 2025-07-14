@@ -65,7 +65,7 @@ export default function LiveTextOverlay({ triggerEvent, isTriggering }: LiveText
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedFont])  // Re-run when selectedFont changes
+  }, [selectedFont, handleFontChange])  // Re-run when selectedFont changes
 
   return (
     <div className="space-y-4">
