@@ -13,6 +13,7 @@ interface PusherEventData {
   qrCodeColor?: 'black' | 'white'
   useSquareShapes?: boolean
   invertColors?: boolean
+  showVideoSquares?: boolean
   backgroundColor?: string
   saturation?: number
   lightness?: number
@@ -39,6 +40,7 @@ interface PusherEventHandlers {
   onSetQrCodeColor?: (color: 'black' | 'white') => void
   onToggleVideoShapes?: (useSquareShapes: boolean) => void
   onToggleInvertColors?: (invertColors: boolean) => void
+  onToggleVideoSquares?: (showVideoSquares: boolean) => void
   onSetBackgroundColor?: (color: string) => void
   onSetBackgroundColorTransition?: (color: string) => void
   onStartColorCycle?: (data: { saturation?: number, lightness?: number, speed?: number, startHue?: number }) => void
@@ -105,6 +107,10 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
               
               if (data.type === 'TOGGLE_INVERT_COLORS' && data.invertColors !== undefined) {
                 handlersRef.current.onToggleInvertColors?.(data.invertColors)
+              }
+              
+              if (data.type === 'TOGGLE_VIDEO_SQUARES' && data.showVideoSquares !== undefined) {
+                handlersRef.current.onToggleVideoSquares?.(data.showVideoSquares)
               }
               
               if (data.type === 'SET_BACKGROUND_COLOR' && data.backgroundColor) {

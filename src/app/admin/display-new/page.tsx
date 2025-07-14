@@ -30,6 +30,7 @@ function VideoSquareDisplay() {
   const [qrCodeColor, setQrCodeColor] = useState<'black' | 'white'>('white')
   const [useSquareShapes, setUseSquareShapes] = useState(true)
   const [invertColors, setInvertColors] = useState(false)
+  const [showVideoSquares, setShowVideoSquares] = useState(true)
   
   // Text display state
   const [displayText, setDisplayText] = useState('')
@@ -73,6 +74,7 @@ function VideoSquareDisplay() {
     onSetQrCodeColor: (color: 'black' | 'white') => setQrCodeColor(color),
     onToggleVideoShapes: (useSquareShapes: boolean) => setUseSquareShapes(useSquareShapes),
     onToggleInvertColors: (invertColors: boolean) => setInvertColors(invertColors),
+    onToggleVideoSquares: (showVideoSquares: boolean) => setShowVideoSquares(showVideoSquares),
     onSetBackgroundColor: (color: string) => {
       colorSystem.setBackgroundColor(color)
       colorSystem.setColorCycleActive(false)
@@ -325,8 +327,8 @@ function VideoSquareDisplay() {
           }}
         >
           <ResponsiveCamera />
-          {/* Just the squares, handles the physics - hide during event space */}
-          {!showEventSpace && (
+          {/* Just the squares, handles the physics - hide during event space or when video squares are disabled */}
+          {!showEventSpace && showVideoSquares && (
             <MovingSquares 
               participantTracks={tracksToUse} 
               onSquaresUpdate={setSquares}
@@ -336,8 +338,8 @@ function VideoSquareDisplay() {
           )}
         </Canvas>
         
-        {/* Video content - handles both participant videos and placeholders - hide during event space */}
-        {!showEventSpace && (
+        {/* Video content - handles both participant videos and placeholders - hide during event space or when video squares are disabled */}
+        {!showEventSpace && showVideoSquares && (
           <VideoContent 
             squares={squares}
             participantTracks={tracksToUse}

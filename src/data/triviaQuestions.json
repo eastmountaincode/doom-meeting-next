@@ -123,5 +123,34 @@
                 "correctAnswer": 3
             }
         ]
+    },
+    "maddie_cmon_everybody_2025_07_14": {
+        "name": "Maddie Cmon Everybody July 14 2025",
+        "questions": [
+            {
+                "id": "q1",
+                "question": "C'mon _______",
+                "choices": [
+                    "A) Nobody",
+                    "B) Somebody",
+                    "C) Everybody",
+                    "D) Bodyody"
+                ],
+                "correctAnswer": 3
+            },
+            {
+                "id": "q2",
+                "question": "Damn yall is maddie killing it right now or what",
+                "choices": [
+                    "A) Omg no",
+                    "B) Omg yes",
+                    "C) asvns4a8f8s4fnsajfnkasdj",
+                    "D) yes"
+                ],
+                "correctAnswer": 2
+            }
+        ]
+
+
     }
 }

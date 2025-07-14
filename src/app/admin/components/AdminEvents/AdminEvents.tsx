@@ -20,6 +20,7 @@ export default function AdminEvents() {
     const [qrCodeColor, setQrCodeColor] = useState<'black' | 'white'>('white')
     const [useSquareShapes, setUseSquareShapes] = useState(true)
     const [invertColors, setInvertColors] = useState(false)
+    const [showVideoSquares, setShowVideoSquares] = useState(true)
 
     // Event system state
     const [activeEvent, setActiveEvent] = useState<string | null>(null)
@@ -114,6 +115,12 @@ export default function AdminEvents() {
         const newState = !invertColors
         setInvertColors(newState)
         await triggerEvent('TOGGLE_INVERT_COLORS', { invertColors: newState })
+    }
+
+    const toggleVideoSquares = async () => {
+        const newState = !showVideoSquares
+        setShowVideoSquares(newState)
+        await triggerEvent('TOGGLE_VIDEO_SQUARES', { showVideoSquares: newState })
     }
 
 
@@ -226,6 +233,22 @@ export default function AdminEvents() {
                         className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ${invertColors ? 'bg-purple-600' : 'bg-gray-600'}`}
                     >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${invertColors ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-2">
+                    <div className="flex items-center space-x-3">
+                        <HiSparkles className="text-lg" />
+                        <div>
+                            <div className="text-white font-medium">Video Squares</div>
+                            <div className="text-gray-400 text-sm">Show or hide all video squares (both participants and placeholders)</div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={toggleVideoSquares}
+                        disabled={isTriggering}
+                        className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ${showVideoSquares ? 'bg-green-600' : 'bg-gray-600'}`}
+                    >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showVideoSquares ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                 </div>
                 <div className="space-y-4 mt-5">
