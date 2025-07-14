@@ -10,6 +10,7 @@ import BackgroundControls from './BackgroundControls'
 import VideoSpeedControls from './VideoSpeedControls'
 import LiveTextOverlay from './LiveTextOverlay'
 import SpecialEvents from './SpecialEvents'
+import TriviaControls from './TriviaControls'
 
 export default function AdminEvents() {
     const [isTriggering, setIsTriggering] = useState(false)
@@ -236,6 +237,15 @@ export default function AdminEvents() {
 
             {/* Live Text Overlay */}
             <LiveTextOverlay triggerEvent={triggerEvent} isTriggering={isTriggering} />
+
+            {/* Trivia Controls */}
+            <TriviaControls
+                triggerEvent={triggerEvent}
+                isTriggering={isTriggering}
+                activeEvent={activeEvent}
+                startEvent={startEvent}
+                stopEvent={stopEvent}
+            />
 
             {/* Special Events */}
             <SpecialEvents

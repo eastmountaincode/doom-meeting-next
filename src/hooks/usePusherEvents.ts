@@ -25,6 +25,11 @@ interface PusherEventData {
   imageId?: string
   eventType?: string
   fontFamily?: string
+  // Trivia-specific properties
+  question?: string
+  choices?: string[]
+  correctAnswer?: number
+  topicName?: string
 }
 
 interface PusherEventHandlers {
@@ -47,7 +52,7 @@ interface PusherEventHandlers {
   onClearYoutubeBackground?: () => void
   onSetImageBackground?: () => void
   onClearImageBackground?: () => void
-  onStartEvent?: (eventType: string, data?: { participantId?: string }) => void
+  onStartEvent?: (eventType: string, data?: PusherEventData) => void
   onStopEvent?: (eventType: string) => void
 }
 
@@ -176,7 +181,7 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
               
               if (data.type === 'START_EVENT' && data.eventType) {
                 console.log('Display received START_EVENT with:', { eventType: data.eventType, participantId: data.participantId })
-                handlersRef.current.onStartEvent?.(data.eventType, { participantId: data.participantId })
+                handlersRef.current.onStartEvent?.(data.eventType, data)
               }
               
               if (data.type === 'STOP_EVENT' && data.eventType) {

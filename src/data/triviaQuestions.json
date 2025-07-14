@@ -1,0 +1,127 @@
+{
+    "laila_show_2025_07_14": {
+        "name": "Laila Show January 14, 2025",
+        "questions": [
+            {
+                "id": "q1",
+                "question": "What is the most mysterious thing in the universe?",
+                "choices": [
+                    "A) Black holes",
+                    "B) Dark matter",
+                    "C) Quantum mechanics",
+                    "D) Your search history"
+                ],
+                "correctAnswer": 3
+            },
+            {
+                "id": "q2",
+                "question": "Which programming language was created by accident?",
+                "choices": [
+                    "A) JavaScript",
+                    "B) Python",
+                    "C) Java",
+                    "D) All of them"
+                ],
+                "correctAnswer": 0
+            },
+            {
+                "id": "q3",
+                "question": "What happens when you divide by zero?",
+                "choices": [
+                    "A) The universe explodes",
+                    "B) You get infinity",
+                    "C) Your calculator breaks",
+                    "D) Mathematicians cry"
+                ],
+                "correctAnswer": 3
+            },
+            {
+                "id": "q4",
+                "question": "How many bugs are in the average software project?",
+                "choices": [
+                    "A) 7",
+                    "B) 42",
+                    "C) 99",
+                    "D) Yes"
+                ],
+                "correctAnswer": 3
+            }
+        ]
+    },
+    "random_fun_facts": {
+        "name": "Random Fun Facts",
+        "questions": [
+            {
+                "id": "rf1",
+                "question": "What percentage of the ocean have humans explored?",
+                "choices": [
+                    "A) 5%",
+                    "B) 20%",
+                    "C) 50%",
+                    "D) We're still looking for it"
+                ],
+                "correctAnswer": 0
+            },
+            {
+                "id": "rf2",
+                "question": "How many times can you fold a piece of paper in half?",
+                "choices": [
+                    "A) 4 times",
+                    "B) 7 times",
+                    "C) 12 times",
+                    "D) Until your patience runs out"
+                ],
+                "correctAnswer": 1
+            },
+            {
+                "id": "rf3",
+                "question": "What's the most abundant gas in Earth's atmosphere?",
+                "choices": [
+                    "A) Oxygen",
+                    "B) Carbon dioxide",
+                    "C) Nitrogen",
+                    "D) Hot air from politicians"
+                ],
+                "correctAnswer": 2
+            }
+        ]
+    },
+    "tech_humor": {
+        "name": "Tech Humor",
+        "questions": [
+            {
+                "id": "th1",
+                "question": "What's the hardest part of programming?",
+                "choices": [
+                    "A) Writing the code",
+                    "B) Debugging the code",
+                    "C) Naming things",
+                    "D) Explaining to non-programmers what you do"
+                ],
+                "correctAnswer": 2
+            },
+            {
+                "id": "th2",
+                "question": "How do you tell if someone uses Arch Linux?",
+                "choices": [
+                    "A) They have superior skills",
+                    "B) They tell you",
+                    "C) They complain about Ubuntu",
+                    "D) They haven't showered in days"
+                ],
+                "correctAnswer": 1
+            },
+            {
+                "id": "th3",
+                "question": "What's the difference between a programmer and a user?",
+                "choices": [
+                    "A) Programmers create bugs, users find them",
+                    "B) Programmers drink more coffee",
+                    "C) Users actually read documentation",
+                    "D) There is no difference, both ignore error messages"
+                ],
+                "correctAnswer": 3
+            }
+        ]
+    }
+}

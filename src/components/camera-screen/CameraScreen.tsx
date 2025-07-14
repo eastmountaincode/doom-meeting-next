@@ -1,19 +1,55 @@
 'use client'
 
 import { useAtomValue, useSetAtom } from 'jotai'
-import { screenNameAtom, navigateToLandingAtom } from '../../store'
+import { screenNameAtom, navigateToLandingAtom, selectedCameraAtom } from '../../store'
 import { useState, useEffect } from 'react'
-import { LiveKitRoom } from '@livekit/components-react'
+import { LiveKitRoom, useTracks, useLocalParticipant } from '@livekit/components-react'
+import { Track } from 'livekit-client'
 import LiveKitCameraView from './LiveKitCameraView'
+import TriviaDisplay from './TriviaDisplay'
+import { usePusherEvents } from '../../hooks/usePusherEvents'
 import '@livekit/components-styles'
 
 function CameraScreen() {
   const screenName = useAtomValue(screenNameAtom)
+  const selectedCamera = useAtomValue(selectedCameraAtom)
   const navigateToLanding = useSetAtom(navigateToLandingAtom)
   
   const [token, setToken] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
+
+  // Trivia state
+  const [triviaActive, setTriviaActive] = useState(false)
+  const [triviaData, setTriviaData] = useState<{
+    question: string
+    choices: string[]
+    correctAnswer: number
+    topicName: string
+  } | null>(null)
+
+  // Pusher event handlers
+  const { isConnected } = usePusherEvents({
+    onStartEvent: (eventType, data) => {
+      console.log('Camera screen received START_EVENT:', { eventType, data })
+      if (eventType === 'TRIVIA_QUESTION') {
+        setTriviaData({
+          question: data?.question || '',
+          choices: data?.choices || [],
+          correctAnswer: data?.correctAnswer || 0,
+          topicName: data?.topicName || 'Unknown Topic'
+        })
+        setTriviaActive(true)
+      }
+    },
+    onStopEvent: (eventType) => {
+      console.log('Camera screen received STOP_EVENT:', { eventType })
+      if (eventType === 'TRIVIA_QUESTION') {
+        setTriviaActive(false)
+        setTriviaData(null)
+      }
+    },
+  })
 
   // Generate user token
   useEffect(() => {
@@ -111,19 +147,68 @@ function CameraScreen() {
   }
 
   return (
-    <LiveKitRoom
-      video={false} // We'll enable camera manually with custom constraints
-      audio={false} // No audio for this app
-      token={token}
-      serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
-      data-lk-theme="default"
-      style={{ height: '100%' }}
-      onError={handleConnectionError}
-      onDisconnected={handleDisconnected}
-      className="bg-gray-900"
-    >
+    <div className="relative h-full">
+      <LiveKitRoom
+        video={false} // We'll enable camera manually with custom constraints
+        audio={false} // No audio for this app
+        token={token}
+        serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+        data-lk-theme="default"
+        style={{ height: '100%' }}
+        onError={handleConnectionError}
+        onDisconnected={handleDisconnected}
+        className="bg-gray-900"
+      >
+        <CameraScreenContent 
+          triviaActive={triviaActive}
+          triviaData={triviaData}
+          selectedCamera={selectedCamera}
+        />
+      </LiveKitRoom>
+    </div>
+  )
+}
+
+// Separate component to access LiveKit context
+function CameraScreenContent({ 
+  triviaActive, 
+  triviaData, 
+  selectedCamera 
+}: {
+  triviaActive: boolean
+  triviaData: {
+    question: string
+    choices: string[]
+    correctAnswer: number
+    topicName: string
+  } | null
+  selectedCamera: 'front' | 'back' | null
+}) {
+  // Get the local video track
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: false },
+  ], { onlySubscribed: false })
+  
+  const localVideoTrack = tracks.find(track => 
+    track.participant.isLocal && track.publication
+  ) as import('@livekit/components-react').TrackReference | null
+
+  return (
+    <>
       <LiveKitCameraView />
-    </LiveKitRoom>
+      
+      {/* Trivia Display Overlay */}
+      {triviaActive && triviaData && (
+        <TriviaDisplay
+          question={triviaData.question}
+          choices={triviaData.choices}
+          correctAnswer={triviaData.correctAnswer}
+          topicName={triviaData.topicName}
+          localVideoTrack={localVideoTrack}
+          selectedCamera={selectedCamera}
+        />
+      )}
+    </>
   )
 }
 
