@@ -25,7 +25,6 @@ interface TriviaTopicData {
 }
 
 export default function TriviaControls({ 
-    triggerEvent, 
     isTriggering, 
     activeEvent, 
     startEvent, 

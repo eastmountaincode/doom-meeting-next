@@ -3,7 +3,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { screenNameAtom, navigateToLandingAtom, selectedCameraAtom } from '../../store'
 import { useState, useEffect } from 'react'
-import { LiveKitRoom, useTracks, useLocalParticipant } from '@livekit/components-react'
+import { LiveKitRoom, useTracks } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import LiveKitCameraView from './LiveKitCameraView'
 import TriviaDisplay from './TriviaDisplay'
@@ -27,9 +27,38 @@ function CameraScreen() {
     correctAnswer: number
     topicName: string
   } | null>(null)
+  const [triviaCloseTimer, setTriviaCloseTimer] = useState<NodeJS.Timeout | null>(null)
+
+  // Handle trivia answer selection
+  const handleTriviaAnswerSelected = (selectedIndex: number, isCorrect: boolean) => {
+    console.log('User answered trivia:', { selectedIndex, isCorrect })
+    
+    // Clear any existing timer
+    if (triviaCloseTimer) {
+      clearTimeout(triviaCloseTimer)
+    }
+    
+    // Set timer to close trivia after 3 seconds
+    const timer = setTimeout(() => {
+      setTriviaActive(false)
+      setTriviaData(null)
+      setTriviaCloseTimer(null)
+    }, 3000)
+    
+    setTriviaCloseTimer(timer)
+  }
+
+  // Cleanup timer on unmount or when trivia stops
+  useEffect(() => {
+    return () => {
+      if (triviaCloseTimer) {
+        clearTimeout(triviaCloseTimer)
+      }
+    }
+  }, [triviaCloseTimer])
 
   // Pusher event handlers
-  const { isConnected } = usePusherEvents({
+  const {} = usePusherEvents({
     onStartEvent: (eventType, data) => {
       console.log('Camera screen received START_EVENT:', { eventType, data })
       if (eventType === 'TRIVIA_QUESTION') {
@@ -45,6 +74,11 @@ function CameraScreen() {
     onStopEvent: (eventType) => {
       console.log('Camera screen received STOP_EVENT:', { eventType })
       if (eventType === 'TRIVIA_QUESTION') {
+        // Clear any existing timer
+        if (triviaCloseTimer) {
+          clearTimeout(triviaCloseTimer)
+          setTriviaCloseTimer(null)
+        }
         setTriviaActive(false)
         setTriviaData(null)
       }
@@ -163,6 +197,7 @@ function CameraScreen() {
           triviaActive={triviaActive}
           triviaData={triviaData}
           selectedCamera={selectedCamera}
+          onTriviaAnswerSelected={handleTriviaAnswerSelected}
         />
       </LiveKitRoom>
     </div>
@@ -173,7 +208,8 @@ function CameraScreen() {
 function CameraScreenContent({ 
   triviaActive, 
   triviaData, 
-  selectedCamera 
+  selectedCamera,
+  onTriviaAnswerSelected
 }: {
   triviaActive: boolean
   triviaData: {
@@ -183,6 +219,7 @@ function CameraScreenContent({
     topicName: string
   } | null
   selectedCamera: 'front' | 'back' | null
+  onTriviaAnswerSelected: (selectedIndex: number, isCorrect: boolean) => void
 }) {
   // Get the local video track
   const tracks = useTracks([
@@ -206,6 +243,7 @@ function CameraScreenContent({
           topicName={triviaData.topicName}
           localVideoTrack={localVideoTrack}
           selectedCamera={selectedCamera}
+          onAnswerSelected={onTriviaAnswerSelected}
         />
       )}
     </>

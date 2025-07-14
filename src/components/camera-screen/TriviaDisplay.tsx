@@ -1,7 +1,7 @@
 'use client'
 
-import { HiSparkles } from 'react-icons/hi2'
 import { VideoTrack, type TrackReference } from '@livekit/components-react'
+import { useState, useEffect } from 'react'
 
 interface TriviaDisplayProps {
     question: string
@@ -10,16 +10,37 @@ interface TriviaDisplayProps {
     topicName: string
     localVideoTrack?: TrackReference | null
     selectedCamera?: 'front' | 'back' | null
+    onAnswerSelected?: (selectedIndex: number, isCorrect: boolean) => void
 }
 
 export default function TriviaDisplay({ 
     question, 
     choices, 
-    correctAnswer, 
-    topicName,
+    correctAnswer,
     localVideoTrack,
-    selectedCamera
+    selectedCamera,
+    onAnswerSelected
 }: TriviaDisplayProps) {
+    const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+    const [showFeedback, setShowFeedback] = useState(false)
+    const [isCorrect, setIsCorrect] = useState(false)
+    
+    const handleAnswerSelect = (answerIndex: number) => {
+        if (selectedAnswer !== null) return // Prevent multiple selections
+        
+        const correct = answerIndex === correctAnswer
+        setSelectedAnswer(answerIndex)
+        setIsCorrect(correct)
+        setShowFeedback(true)
+        
+        // Notify parent component
+        onAnswerSelected?.(answerIndex, correct)
+        
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+            // The parent will handle closing the trivia display
+        }, 3000)
+    }
     
     const renderVideoContent = () => {
         if (localVideoTrack && localVideoTrack.publication) {
@@ -52,6 +73,8 @@ export default function TriviaDisplay({
         )
     }
 
+
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-95 flex justify-center z-50 p-4 overflow-y-auto">
             <div className="w-full max-w-4xl mx-auto flex flex-col py-4">
@@ -59,7 +82,6 @@ export default function TriviaDisplay({
                 <div className="w-full mb-4 flex justify-center">
                     <div className="relative w-64 h-64 bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden">
                         {renderVideoContent()}
-
                     </div>
                 </div>
 
@@ -72,23 +94,65 @@ export default function TriviaDisplay({
 
                 {/* Answer Choices */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                    {choices.map((choice, index) => (
-                        <div
-                            key={index}
-                            className="p-3 rounded-lg border-2 bg-gray-700 border-gray-500 text-gray-100 hover:shadow-lg transition-all duration-300"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-gray-600 text-gray-200 text-sm">
-                                    {String.fromCharCode(65 + index)}
+                    {choices.map((choice, index) => {
+                        const isSelected = selectedAnswer === index
+                        const isCorrectAnswer = index === correctAnswer
+                        const shouldShowAsCorrect = showFeedback && isCorrectAnswer
+                        const shouldShowAsWrong = showFeedback && isSelected && !isCorrectAnswer
+                        
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => handleAnswerSelect(index)}
+                                disabled={selectedAnswer !== null}
+                                className={`p-3 rounded-lg border-2 transition-all duration-300 ${
+                                    shouldShowAsCorrect 
+                                        ? 'bg-green-600 border-green-400 text-white' 
+                                        : shouldShowAsWrong 
+                                        ? 'bg-red-600 border-red-400 text-white' 
+                                        : selectedAnswer === null 
+                                        ? 'bg-gray-700 border-gray-500 text-gray-100 hover:bg-gray-600 hover:border-gray-400 hover:shadow-lg cursor-pointer' 
+                                        : 'bg-gray-800 border-gray-600 text-gray-400 cursor-not-allowed'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm ${
+                                        shouldShowAsCorrect 
+                                            ? 'bg-green-400 text-green-900' 
+                                            : shouldShowAsWrong 
+                                            ? 'bg-red-400 text-red-900' 
+                                            : 'bg-gray-600 text-gray-200'
+                                    }`}>
+                                        {shouldShowAsCorrect ? '✓' : shouldShowAsWrong ? '✗' : String.fromCharCode(65 + index)}
+                                    </div>
+                                    <span className="text-base font-medium">
+                                        {choice.replace(/^[A-D]\)\s*/, '')}
+                                    </span>
                                 </div>
-                                <span className="text-base font-medium">
-                                    {choice.replace(/^[A-D]\)\s*/, '')}
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {/* Feedback Message */}
+                {showFeedback && (
+                    <div className="text-center mt-4">
+                        <div className={`text-xl font-bold ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                            {isCorrect ? '🎉 Correct!' : '❌ Wrong Answer'}
+                        </div>
+                        {!isCorrect && (
+                            <div className="text-gray-300 mt-2">
+                                The correct answer was: <span className="font-semibold text-green-400">
+                                    {String.fromCharCode(65 + correctAnswer)}) {choices[correctAnswer].replace(/^[A-D]\)\s*/, '')}
                                 </span>
                             </div>
+                        )}
+                        <div className="text-gray-400 text-sm mt-3">
+                            Returning to camera in 3 seconds...
                         </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+                    </div>
+                                 )}
+             </div>
+         </div>
     )
 } 
