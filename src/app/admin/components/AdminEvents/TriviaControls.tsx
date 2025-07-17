@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { HiQuestionMarkCircle, HiPlay, HiStop } from 'react-icons/hi2'
+import { HiQuestionMarkCircle, HiPlay, HiStop, HiEye } from 'react-icons/hi2'
 import triviaData from '../../../../data/triviaQuestions.json'
 
 interface TriviaControlsProps {
@@ -10,6 +10,7 @@ interface TriviaControlsProps {
     activeEvent: string | null
     startEvent: (eventType: string, options?: Record<string, unknown>) => Promise<void>
     stopEvent: () => Promise<void>
+    revealAnswer: () => Promise<void>
 }
 
 interface TriviaQuestion {
@@ -28,11 +29,14 @@ export default function TriviaControls({
     isTriggering, 
     activeEvent, 
     startEvent, 
-    stopEvent 
+    stopEvent,
+    revealAnswer
 }: TriviaControlsProps) {
     const [selectedTopic, setSelectedTopic] = useState<string>('')
     const [selectedQuestionId, setSelectedQuestionId] = useState<string>('')
     const [currentQuestion, setCurrentQuestion] = useState<TriviaQuestion | null>(null)
+    const [showAnswerStats, setShowAnswerStats] = useState<boolean>(true)
+    const [answerRevealed, setAnswerRevealed] = useState<boolean>(false)
 
     const topics = Object.keys(triviaData) as Array<keyof typeof triviaData>
     const topicData = selectedTopic ? triviaData[selectedTopic as keyof typeof triviaData] as TriviaTopicData : null
@@ -60,15 +64,23 @@ export default function TriviaControls({
     const handleStartTrivia = async () => {
         if (!currentQuestion) return
 
+        setAnswerRevealed(false) // Reset reveal state when starting new trivia
         await startEvent('TRIVIA_QUESTION', {
             question: currentQuestion.question,
             choices: currentQuestion.choices,
             correctAnswer: currentQuestion.correctAnswer,
-            topicName: topicData?.name || 'Unknown Topic'
+            topicName: topicData?.name || 'Unknown Topic',
+            showAnswerStats: showAnswerStats
         })
     }
 
+    const handleRevealAnswer = async () => {
+        setAnswerRevealed(true)
+        await revealAnswer()
+    }
+
     const handleStopTrivia = async () => {
+        setAnswerRevealed(false) // Reset reveal state when stopping trivia
         await stopEvent()
     }
 
@@ -155,6 +167,27 @@ export default function TriviaControls({
                     </div>
                 )}
 
+                {/* Answer Statistics Toggle */}
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Display Options:</label>
+                    <div className="flex items-center space-x-3">
+                        <button
+                            onClick={() => setShowAnswerStats(!showAnswerStats)}
+                            className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                                showAnswerStats ? 'bg-blue-600' : 'bg-gray-600'
+                            }`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                showAnswerStats ? 'translate-x-6' : 'translate-x-1'
+                            }`} />
+                        </button>
+                        <div>
+                            <div className="text-white font-medium">Show Answer Statistics</div>
+                            <div className="text-gray-400 text-sm">Display real-time correct answer count on the main screen</div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Control Buttons */}
                 <div className="flex gap-2">
                     <button
@@ -169,6 +202,17 @@ export default function TriviaControls({
                         <HiPlay className="text-sm" />
                         {activeEvent === 'TRIVIA_QUESTION' ? 'Question Active' : 'Start Trivia'}
                     </button>
+                    
+                    {activeEvent === 'TRIVIA_QUESTION' && !answerRevealed && (
+                        <button
+                            onClick={handleRevealAnswer}
+                            disabled={isTriggering}
+                            className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm bg-yellow-600 text-white rounded font-medium hover:bg-yellow-700 disabled:opacity-50"
+                        >
+                            <HiEye className="text-sm" />
+                            Reveal Answer
+                        </button>
+                    )}
                     
                     {activeEvent === 'TRIVIA_QUESTION' && (
                         <button

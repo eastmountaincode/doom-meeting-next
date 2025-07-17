@@ -143,6 +143,10 @@ export default function AdminEvents() {
         }
     }
 
+    const revealAnswer = async () => {
+        await triggerEvent('REVEAL_ANSWER', { eventType: activeEvent })
+    }
+
     return (
         <div className="space-y-6">
             <h3 className="text-lg font-bold text-white">Event Controls</h3>
@@ -268,6 +272,7 @@ export default function AdminEvents() {
                 activeEvent={activeEvent}
                 startEvent={startEvent}
                 stopEvent={stopEvent}
+                revealAnswer={revealAnswer}
             />
 
             {/* Special Events */}

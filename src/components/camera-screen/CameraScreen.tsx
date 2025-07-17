@@ -3,7 +3,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { screenNameAtom, navigateToLandingAtom, selectedCameraAtom } from '../../store'
 import { useState, useEffect } from 'react'
-import { LiveKitRoom, useTracks } from '@livekit/components-react'
+import { LiveKitRoom, useTracks, useLocalParticipant } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import LiveKitCameraView from './LiveKitCameraView'
 import TriviaDisplay from './TriviaDisplay'
@@ -27,35 +27,11 @@ function CameraScreen() {
     correctAnswer: number
     topicName: string
   } | null>(null)
-  const [triviaCloseTimer, setTriviaCloseTimer] = useState<NodeJS.Timeout | null>(null)
-
   // Handle trivia answer selection
   const handleTriviaAnswerSelected = (selectedIndex: number, isCorrect: boolean) => {
     console.log('User answered trivia:', { selectedIndex, isCorrect })
-    
-    // Clear any existing timer
-    if (triviaCloseTimer) {
-      clearTimeout(triviaCloseTimer)
-    }
-    
-    // Set timer to close trivia after 3 seconds
-    const timer = setTimeout(() => {
-      setTriviaActive(false)
-      setTriviaData(null)
-      setTriviaCloseTimer(null)
-    }, 3000)
-    
-    setTriviaCloseTimer(timer)
+    // No timer logic - trivia stays open until admin stops it
   }
-
-  // Cleanup timer on unmount or when trivia stops
-  useEffect(() => {
-    return () => {
-      if (triviaCloseTimer) {
-        clearTimeout(triviaCloseTimer)
-      }
-    }
-  }, [triviaCloseTimer])
 
   // Pusher event handlers
   const {} = usePusherEvents({
@@ -74,11 +50,6 @@ function CameraScreen() {
     onStopEvent: (eventType) => {
       console.log('Camera screen received STOP_EVENT:', { eventType })
       if (eventType === 'TRIVIA_QUESTION') {
-        // Clear any existing timer
-        if (triviaCloseTimer) {
-          clearTimeout(triviaCloseTimer)
-          setTriviaCloseTimer(null)
-        }
         setTriviaActive(false)
         setTriviaData(null)
       }
@@ -107,6 +78,10 @@ function CameraScreen() {
         }
         
         setToken(data.token)
+        
+        // Store participant ID for trivia answer submission
+        localStorage.setItem('participantId', screenName)
+        
         console.log(`🎫 Generated token for user: ${screenName}`)
       } catch (err) {
         console.error('User token generation failed:', err)
@@ -221,6 +196,9 @@ function CameraScreenContent({
   selectedCamera: 'front' | 'back' | null
   onTriviaAnswerSelected: (selectedIndex: number, isCorrect: boolean) => void
 }) {
+  // Get the local participant (works even without video track)
+  const { localParticipant } = useLocalParticipant()
+  
   // Get the local video track
   const tracks = useTracks([
     { source: Track.Source.Camera, withPlaceholder: false },
@@ -244,6 +222,7 @@ function CameraScreenContent({
           localVideoTrack={localVideoTrack}
           selectedCamera={selectedCamera}
           onAnswerSelected={onTriviaAnswerSelected}
+          participantId={localParticipant?.identity}
         />
       )}
     </>

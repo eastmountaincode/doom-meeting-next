@@ -1,7 +1,8 @@
 'use client'
 
 import { VideoTrack, type TrackReference } from '@livekit/components-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import type Pusher from 'pusher-js'
 
 interface TriviaDisplayProps {
     question: string
@@ -11,6 +12,7 @@ interface TriviaDisplayProps {
     localVideoTrack?: TrackReference | null
     selectedCamera?: 'front' | 'back' | null
     onAnswerSelected?: (selectedIndex: number, isCorrect: boolean) => void
+    participantId?: string
 }
 
 export default function TriviaDisplay({ 
@@ -19,13 +21,55 @@ export default function TriviaDisplay({
     correctAnswer,
     localVideoTrack,
     selectedCamera,
-    onAnswerSelected
+    onAnswerSelected,
+    participantId
 }: TriviaDisplayProps) {
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
     const [showFeedback, setShowFeedback] = useState(false)
     const [isCorrect, setIsCorrect] = useState(false)
+    const [answerRevealed, setAnswerRevealed] = useState(false)
     
-    const handleAnswerSelect = (answerIndex: number) => {
+    // Listen for reveal answer events
+    useEffect(() => {
+        let pusher: Pusher | null = null
+        let channel: ReturnType<Pusher['subscribe']> | null = null
+
+        const connectToPusher = async () => {
+            try {
+                const PusherConstructor = (await import('pusher-js')).default
+                pusher = new PusherConstructor(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+                    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+                })
+                
+                channel = pusher.subscribe('display-channel')
+                
+                // Listen for reveal answer event
+                channel.bind('trivia-reveal-answer', (data: { eventType: string }) => {
+                    console.log('TriviaDisplay received trivia-reveal-answer:', data)
+                    if (data.eventType === 'TRIVIA_QUESTION') {
+                        setAnswerRevealed(true)
+                    }
+                })
+                
+            } catch (error) {
+                console.error('Failed to initialize Pusher in TriviaDisplay:', error)
+            }
+        }
+
+        connectToPusher()
+
+        return () => {
+            if (channel) {
+                channel.unbind_all()
+                pusher?.unsubscribe('display-channel')
+            }
+            if (pusher) {
+                pusher.disconnect()
+            }
+        }
+    }, [])
+    
+    const handleAnswerSelect = async (answerIndex: number) => {
         if (selectedAnswer !== null) return // Prevent multiple selections
         
         const correct = answerIndex === correctAnswer
@@ -33,13 +77,37 @@ export default function TriviaDisplay({
         setIsCorrect(correct)
         setShowFeedback(true)
         
+        // Submit answer to server
+        try {
+            const actualParticipantId = participantId || localStorage.getItem('participantId') || `participant_${Date.now()}`
+            
+            const response = await fetch('/api/admin/trivia-answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'submit-answer',
+                    participantId: actualParticipantId,
+                    selectedAnswer: answerIndex,
+                }),
+            })
+            
+            const result = await response.json()
+            
+            if (result.success) {
+                console.log('Answer submitted successfully:', result)
+            } else {
+                console.error('Failed to submit answer:', result.error)
+            }
+        } catch (error) {
+            console.error('Error submitting answer:', error)
+        }
+        
         // Notify parent component
         onAnswerSelected?.(answerIndex, correct)
         
-        // Auto-close after 3 seconds
-        setTimeout(() => {
-            // The parent will handle closing the trivia display
-        }, 3000)
+        // No auto-return - user stays on this screen until admin stops trivia
     }
     
     const renderVideoContent = () => {
@@ -97,8 +165,9 @@ export default function TriviaDisplay({
                     {choices.map((choice, index) => {
                         const isSelected = selectedAnswer === index
                         const isCorrectAnswer = index === correctAnswer
-                        const shouldShowAsCorrect = showFeedback && isCorrectAnswer
-                        const shouldShowAsWrong = showFeedback && isSelected && !isCorrectAnswer
+                        const shouldShowAsCorrect = showFeedback && answerRevealed && isCorrectAnswer
+                        const shouldShowAsWrong = showFeedback && answerRevealed && isSelected && !isCorrectAnswer
+                        const shouldShowAsSelected = isSelected && !answerRevealed
                         
                         return (
                             <button
@@ -110,6 +179,8 @@ export default function TriviaDisplay({
                                         ? 'bg-green-600 border-green-400 text-white' 
                                         : shouldShowAsWrong 
                                         ? 'bg-red-600 border-red-400 text-white' 
+                                        : shouldShowAsSelected
+                                        ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
                                         : selectedAnswer === null 
                                         ? 'bg-gray-700 border-gray-500 text-gray-100 hover:bg-gray-600 hover:border-gray-400 hover:shadow-lg cursor-pointer' 
                                         : 'bg-gray-800 border-gray-600 text-gray-400 cursor-not-allowed'
@@ -121,6 +192,8 @@ export default function TriviaDisplay({
                                             ? 'bg-green-400 text-green-900' 
                                             : shouldShowAsWrong 
                                             ? 'bg-red-400 text-red-900' 
+                                            : shouldShowAsSelected
+                                            ? 'bg-blue-400 text-blue-900'
                                             : 'bg-gray-600 text-gray-200'
                                     }`}>
                                         {shouldShowAsCorrect ? '✓' : shouldShowAsWrong ? '✗' : String.fromCharCode(65 + index)}
@@ -137,19 +210,26 @@ export default function TriviaDisplay({
                 {/* Feedback Message */}
                 {showFeedback && (
                     <div className="text-center mt-4">
-                        <div className={`text-xl font-bold ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
-                            {isCorrect ? '🎉 Correct!' : '❌ Wrong Answer'}
-                        </div>
-                        {!isCorrect && (
-                            <div className="text-gray-300 mt-2">
-                                The correct answer was: <span className="font-semibold text-green-400">
-                                    {String.fromCharCode(65 + correctAnswer)}) {choices[correctAnswer].replace(/^[A-D]\)\s*/, '')}
-                                </span>
-                            </div>
+                        {answerRevealed ? (
+                            <>
+                                <div className={`text-xl font-bold ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                                    {isCorrect ? '🎉 Correct!' : '❌ Wrong Answer'}
+                                </div>
+                                {!isCorrect && (
+                                    <div className="text-gray-300 mt-2">
+                                        The correct answer was: <span className="font-semibold text-green-400">
+                                            {String.fromCharCode(65 + correctAnswer)}) {choices[correctAnswer].replace(/^[A-D]\)\s*/, '')}
+                                        </span>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <div className="text-lg font-medium text-blue-400">
+                                    📝 Answer Submitted
+                                </div>
+                            </>
                         )}
-                        <div className="text-gray-400 text-sm mt-3">
-                            Returning to camera in 3 seconds...
-                        </div>
                     </div>
                                  )}
              </div>

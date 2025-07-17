@@ -35,6 +35,11 @@ export async function POST(request: NextRequest) {
       await pusher.trigger('admin-channel', 'display-color-update', {
         backgroundColor: body.backgroundColor
       })
+    } else if (body.type === 'REVEAL_ANSWER') {
+      // Send reveal answer event to display channel
+      await pusher.trigger('display-channel', 'trivia-reveal-answer', {
+        eventType: body.eventType
+      })
     } else {
       // Send other events to display channel
     await pusher.trigger('display-channel', 'display-screen-event', event)

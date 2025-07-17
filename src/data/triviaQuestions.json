@@ -1,50 +1,61 @@
 {
     "laila_show_2025_07_14": {
-        "name": "Laila Show January 14, 2025",
+        "name": "Laila Show July 17, 2025",
         "questions": [
             {
                 "id": "q1",
-                "question": "What is the most mysterious thing in the universe?",
+                "question": "What do I do with my hands?????",
                 "choices": [
-                    "A) Black holes",
-                    "B) Dark matter",
-                    "C) Quantum mechanics",
-                    "D) Your search history"
+                    "A) I don't know",
+                    "B) I don't know",
+                    "C) I don't know",
+                    "D) I don't know"
+                ],
+                "correctAnswer": 2
+            },
+            {
+                "id": "q2",
+                "question": "Break glass in case of emergency.",
+                "choices": [
+                    "A) That's not a question",
+                    "B)  ",
+                    "C) Why is B blank?",
+                    "D) All of the above"
                 ],
                 "correctAnswer": 3
             },
             {
-                "id": "q2",
-                "question": "Which programming language was created by accident?",
-                "choices": [
-                    "A) JavaScript",
-                    "B) Python",
-                    "C) Java",
-                    "D) All of them"
-                ],
-                "correctAnswer": 0
-            },
-            {
                 "id": "q3",
-                "question": "What happens when you divide by zero?",
+                "question": "Laila Smith is a _______",
                 "choices": [
-                    "A) The universe explodes",
-                    "B) You get infinity",
-                    "C) Your calculator breaks",
-                    "D) Mathematicians cry"
+                    "A) 100%",
+                    "B) Text me when you get home",
+                    "C) Is this something I should be worried about?",
+                    "D) Mathematicians cry too"
                 ],
                 "correctAnswer": 3
             },
             {
                 "id": "q4",
-                "question": "How many bugs are in the average software project?",
+                "question": "What's the most important thing about me?",
                 "choices": [
-                    "A) 7",
-                    "B) 42",
-                    "C) 99",
-                    "D) Yes"
+                    "A) I do my best!",
+                    "B) I DO MY BEST !!!!!!!",
+                    "C) IDODO OD M$Y BESTSETST",
+                    "D) DONT TOUCH ME"
                 ],
-                "correctAnswer": 3
+                "correctAnswer": 1
+            },
+            {
+                "id": "q5",
+                "question": "Where are are we right now?",
+                "choices": [
+                    "A) I WAS BORN IN THIS CLUB",
+                    "B) Right now is all we have, do what you want to do, we're in the club and we're staying. Also if you're in the club, you're doing now or before. ",
+                    "C) Third answer.",
+                    "D) Fourth answer."
+                ],
+                "correctAnswer": 1
             }
         ]
     },

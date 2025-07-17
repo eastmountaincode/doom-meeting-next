@@ -17,5 +17,50 @@ export interface DisplayScreenEvent {
   eventType?: string // For START_EVENT and STOP_EVENT
   text?: string // For SET_DISPLAY_TEXT event
   fontFamily?: string // For SET_TEXT_FONT event
+  // Trivia-specific properties
+  question?: string // For TRIVIA_QUESTION event
+  choices?: string[] // For TRIVIA_QUESTION event
+  correctAnswer?: number // For TRIVIA_QUESTION event
+  topicName?: string // For TRIVIA_QUESTION event
+  showAnswerStats?: boolean // For TRIVIA_QUESTION event
   timestamp: number
+}
+
+// Trivia-related types
+export interface TriviaAnswer {
+  participantId: string
+  selectedAnswer: number
+  isCorrect: boolean
+  submittedAt: number
+}
+
+export interface TriviaStats {
+  totalAnswers: number
+  correctAnswers: number
+  question?: string
+  isActive?: boolean
+}
+
+export interface TriviaAnswerSubmission {
+  action: 'submit-answer'
+  participantId: string
+  selectedAnswer: number
+}
+
+export interface TriviaSessionStart {
+  action: 'start-session'
+  question: string
+  correctAnswer: number
+  choices: string[]
+  topicName: string
+}
+
+export interface TriviaSessionEnd {
+  action: 'end-session'
+}
+
+export interface TriviaStatsEvent {
+  totalAnswers: number
+  correctAnswers: number
+  question: string
 } 

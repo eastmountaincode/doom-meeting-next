@@ -17,6 +17,7 @@ import TextOverlay from '../../../components/TextOverlay'
 import ResponsiveCamera from '../../../components/ResponsiveCamera'
 import QRCode from '../../../components/QRCode'
 import QRCodeOverlay from '../../../components/QRCodeOverlay'
+import TriviaOverlay from '../../../components/TriviaOverlay'
 import EventSpace from '../../../components/EventSpace/EventSpace'
 import { RESERVED_SCREEN_NAME } from '../../../config/constants'
 
@@ -62,6 +63,24 @@ function VideoSquareDisplay() {
   const [showEventSpace, setShowEventSpace] = useState(false)
   const [eventSpaceType, setEventSpaceType] = useState<string>('')
   const [eventSpaceParticipantId, setEventSpaceParticipantId] = useState<string>('')
+  
+  // Trivia state
+  const [showTrivia, setShowTrivia] = useState(false)
+  const [triviaQuestion, setTriviaQuestion] = useState<string>('')
+  const [triviaChoices, setTriviaChoices] = useState<string[]>([])
+  const [triviaTopicName, setTriviaTopicName] = useState<string>('')
+  const [triviaAnswerStats, setTriviaAnswerStats] = useState<{
+    totalAnswers: number
+    correctAnswers: number
+  }>({ totalAnswers: 0, correctAnswers: 0 })
+  const [triviaAnswerBreakdown, setTriviaAnswerBreakdown] = useState<{
+    choiceIndex: number
+    count: number
+    percentage: number
+  }[]>([])
+  const [triviaCorrectAnswer, setTriviaCorrectAnswer] = useState<number>(0)
+  const [showTriviaStats, setShowTriviaStats] = useState<boolean>(false)
+  const [triviaAnswerRevealed, setTriviaAnswerRevealed] = useState<boolean>(false)
   
   // Use color system hook
   const colorSystem = useColorSystem()
@@ -162,7 +181,7 @@ function VideoSquareDisplay() {
       setBackgroundImage('')
       setShowImageBackground(false)
     },
-    onStartEvent: (eventType: string, data?: { participantId?: string }) => {
+    onStartEvent: (eventType: string, data?: { participantId?: string; question?: string; choices?: string[]; topicName?: string; correctAnswer?: number; showAnswerStats?: boolean }) => {
       if (eventType === 'QR_CODE_EVENT') {
         // Store the current QR code state
         setOriginalQrCodeState(showQrCode)
@@ -188,6 +207,45 @@ function VideoSquareDisplay() {
         setShowEventSpace(true)
         setOriginalQrCodeState(showQrCode)
         setShowQrCode(false)
+      } else if (eventType === 'TRIVIA_QUESTION') {
+        // Show the trivia question on the main display
+        setTriviaQuestion(data?.question || '')
+        setTriviaChoices(data?.choices || [])
+        setTriviaTopicName(data?.topicName || '')
+        setTriviaCorrectAnswer(data?.correctAnswer || 0)
+        setShowTrivia(true)
+        setShowTriviaStats(data?.showAnswerStats || false)
+        setTriviaAnswerRevealed(false) // Reset reveal state when starting new trivia
+        setTriviaAnswerBreakdown([]) // Reset breakdown when starting new trivia
+        setOriginalQrCodeState(showQrCode)
+        setShowQrCode(false)
+        
+        // Start trivia session for answer collection
+        if (data?.question && data?.correctAnswer !== undefined) {
+          fetch('/api/admin/trivia-answer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+                          body: JSON.stringify({
+                action: 'start-session',
+                question: data.question,
+                correctAnswer: data.correctAnswer,
+                choices: data.choices || [],
+                topicName: data.topicName || 'Unknown Topic'
+              }),
+          }).then(response => response.json())
+            .then(result => {
+              if (result.success) {
+                console.log('Trivia session started for answer collection')
+                setTriviaAnswerStats({ totalAnswers: 0, correctAnswers: 0 })
+                setTriviaAnswerBreakdown([])
+              }
+            })
+            .catch(error => {
+              console.error('Failed to start trivia session:', error)
+            })
+        }
       }
     },
     onStopEvent: (eventType: string) => {
@@ -211,6 +269,51 @@ function VideoSquareDisplay() {
         setShowEventSpace(false)
         setEventSpaceType('')
         setShowQrCode(originalQrCodeState)
+      } else if (eventType === 'TRIVIA_QUESTION') {
+        // Hide the trivia question
+        setShowTrivia(false)
+        setTriviaQuestion('')
+        setTriviaChoices([])
+        setTriviaTopicName('')
+        setTriviaCorrectAnswer(0)
+        setTriviaAnswerRevealed(false) // Reset reveal state when stopping trivia
+        setTriviaAnswerBreakdown([]) // Reset breakdown when stopping trivia
+        setShowQrCode(originalQrCodeState)
+        
+        // End trivia session
+        fetch('/api/admin/trivia-answer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'end-session'
+          }),
+        }).then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              console.log('Trivia session ended:', result.finalStats)
+              setTriviaAnswerStats({ totalAnswers: 0, correctAnswers: 0 })
+              setTriviaAnswerBreakdown([])
+            }
+          })
+          .catch(error => {
+            console.error('Failed to end trivia session:', error)
+          })
+      }
+    },
+    onTriviaAnswerStats: (data: { totalAnswers: number, correctAnswers: number, question: string, answerBreakdown: { choiceIndex: number, count: number, percentage: number }[] }) => {
+      console.log('Received trivia answer stats:', data)
+      setTriviaAnswerStats({
+        totalAnswers: data.totalAnswers,
+        correctAnswers: data.correctAnswers
+      })
+      setTriviaAnswerBreakdown(data.answerBreakdown || [])
+    },
+    onTriviaRevealAnswer: (data: { eventType: string }) => {
+      console.log('Received trivia reveal answer:', data)
+      if (data.eventType === 'TRIVIA_QUESTION') {
+        setTriviaAnswerRevealed(true)
       }
     },
   }
@@ -372,6 +475,19 @@ function VideoSquareDisplay() {
           color={qrCodeColor}
           canvasSize={canvasSize}
         />
+        
+        {/* Trivia Overlay */}
+                    <TriviaOverlay
+              show={showTrivia}
+              question={triviaQuestion}
+              choices={triviaChoices}
+              topicName={triviaTopicName}
+              canvasSize={canvasSize}
+              answerStats={showTriviaStats ? triviaAnswerStats : undefined}
+              answerBreakdown={showTriviaStats ? triviaAnswerBreakdown : undefined}
+              correctAnswer={triviaCorrectAnswer}
+              answerRevealed={triviaAnswerRevealed}
+            />
       </div>
       
       {/* QR Code */}

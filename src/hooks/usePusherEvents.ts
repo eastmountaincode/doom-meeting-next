@@ -56,6 +56,8 @@ interface PusherEventHandlers {
   onClearImageBackground?: () => void
   onStartEvent?: (eventType: string, data?: PusherEventData) => void
   onStopEvent?: (eventType: string) => void
+  onTriviaAnswerStats?: (data: { totalAnswers: number, correctAnswers: number, question: string, answerBreakdown: { choiceIndex: number, count: number, percentage: number }[] }) => void
+  onTriviaRevealAnswer?: (data: { eventType: string }) => void
 }
 
 export function usePusherEvents(handlers: PusherEventHandlers) {
@@ -194,6 +196,18 @@ export function usePusherEvents(handlers: PusherEventHandlers) {
                 console.log('Display received STOP_EVENT with:', { eventType: data.eventType })
                 handlersRef.current.onStopEvent?.(data.eventType)
               }
+            })
+            
+            // Bind to trivia answer stats
+            channel.bind('trivia-answer-stats', (data: { totalAnswers: number, correctAnswers: number, question: string, answerBreakdown: { choiceIndex: number, count: number, percentage: number }[] }) => {
+              console.log('Display received trivia-answer-stats:', data)
+              handlersRef.current.onTriviaAnswerStats?.(data)
+            })
+            
+            // Bind to trivia reveal answer
+            channel.bind('trivia-reveal-answer', (data: { eventType: string }) => {
+              console.log('Display received trivia-reveal-answer:', data)
+              handlersRef.current.onTriviaRevealAnswer?.(data)
             })
           }
           if (pusher.connection && typeof pusher.connection.bind === 'function') {
