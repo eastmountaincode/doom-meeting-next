@@ -12,8 +12,8 @@ export default function CameraControls({
   onEndMeeting 
 }: CameraControlsProps) {
   // Dynamic button text based on camera state
-  const frontButtonText = selectedCamera === null ? 'LOOK AT ME' : 'ME'
-  const backButtonText = selectedCamera === null ? 'LOOK AT YOU' : 'YOU'
+  const frontButtonText = selectedCamera === null ? 'LOOK AT ME' : 'LOOK AT ME'
+  const backButtonText = selectedCamera === null ? 'LOOK AT YOU' : 'LOOK AT YOU'
 
   return (
     <div className="pt-2 sm:pt-3 space-y-2 sm:space-y-3">
