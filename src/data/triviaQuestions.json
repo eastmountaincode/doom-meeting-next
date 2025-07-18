@@ -56,6 +56,17 @@
                     "D) Fourth answer."
                 ],
                 "correctAnswer": 1
+            },
+            {
+                "id": "q6",
+                "question": "What is Laila's nickname?",
+                "choices": [
+                    "A) Li",
+                    "B) Sweet Grammy ",
+                    "C) Big Hoss",
+                    "D) if I told you that I'd have to kill you"
+                ],
+                "correctAnswer": 1
             }
         ]
     },
